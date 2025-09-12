@@ -1,7 +1,11 @@
 import { HttpService } from "@nestjs/axios";
 import { Injectable } from "@nestjs/common";
 import axios from "axios";
-import { PERFORMANCE_CLIENT_ID, PERFORMANCE_CLIENT_SECRET } from "@/config";
+import {
+  PERFORMANCE_CLIENT_ID,
+  PERFORMANCE_CLIENT_SECRET,
+  OZON_PERFORMANCE_TOKEN_URL,
+} from "@/config";
 import { waitRateLimit } from "@/shared/utils/rateLimit";
 
 @Injectable()
@@ -27,7 +31,7 @@ export class PerformanceApiService {
 
     await waitRateLimit();
     const { data } = await axios.post(
-      "https://api-performance.ozon.ru:443/api/client/token",
+      OZON_PERFORMANCE_TOKEN_URL,
       {
         client_id: PERFORMANCE_CLIENT_ID,
         client_secret: PERFORMANCE_CLIENT_SECRET,
@@ -49,3 +53,4 @@ export class PerformanceApiService {
     return this.http;
   }
 }
+
