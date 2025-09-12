@@ -12,6 +12,11 @@ export class TransactionController {
     return this.transactionService.create(dto);
   }
 
+  @Get('sync')
+  sync() {
+    return this.transactionService.sync();
+  }
+
   @Get()
   findAll() {
     return this.transactionService.findAll();
