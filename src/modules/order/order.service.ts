@@ -12,6 +12,14 @@ export class OrderService {
     ) {
     }
 
+    async sync(dto: GetPostingsDto) {
+        const ordersCount = await this.prisma.order.count();
+        if (ordersCount === 0) {
+            return this.saveOrders(dto);
+        }
+        return this.updateNotDelivered();
+    }
+
     async saveOrders(dto: GetPostingsDto) {
         const result = await this.postingApi.list(dto);
         const postings = result ?? [];
