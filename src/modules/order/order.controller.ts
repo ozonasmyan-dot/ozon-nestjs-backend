@@ -7,12 +7,7 @@ export class OrderController {
   constructor(private readonly orderService: OrderService) {}
 
   @Get('sync')
-  savePostings(@Query() dto: GetPostingsDto) {
-    return this.orderService.saveOrders(dto);
-  }
-
-  @Get('sync-pending')
-  updatePending() {
-    return this.orderService.updateNotDelivered();
+  sync(@Query() dto: GetPostingsDto) {
+    return this.orderService.sync(dto);
   }
 }
