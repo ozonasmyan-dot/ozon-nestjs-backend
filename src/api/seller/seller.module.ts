@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { HttpModule } from "@nestjs/axios";
 import { SellerApiService } from "./seller.service";
+import { PostingApiService } from "./posting.service";
 import { SELLER_CLIENT_ID, SELLER_API_KEY, OZON_SELLER_API_URL } from "@/config";
 
 @Module({
@@ -14,8 +15,8 @@ import { SELLER_CLIENT_ID, SELLER_API_KEY, OZON_SELLER_API_URL } from "@/config"
       },
     }),
   ],
-  providers: [SellerApiService],
-  exports: [SellerApiService],
+  providers: [SellerApiService, PostingApiService],
+  exports: [SellerApiService, PostingApiService],
 })
 export class SellerApiModule {}
 
