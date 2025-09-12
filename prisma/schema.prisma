@@ -7,8 +7,38 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id    Int    @id @default(autoincrement())
-  email String @unique
-  name  String?
+model Transaction {
+  id                   String   @id @default(cuid())
+  operationType        String
+  operationTypeName    String
+  operationServiceName String
+  date                 DateTime
+  type                 String
+  postingNumber        String
+  price                Int
+}
+
+model Orders {
+  id                   String   @id @default(cuid())
+  product              String
+  orderId              String
+  orderNumber          String
+  postingNumber        String
+  status               String
+  createdAt            DateTime
+  inProcessAt          DateTime
+  deliveryType         String
+  city                 String?
+  isPremium            Boolean
+  paymentTypeGroupName String
+  warehouseId          String
+  warehouseName        String
+  sku                  String
+  oldPrice             Int
+  price                Int
+  currencyCode         String
+  clusterFrom          String
+  clusterTo            String
+
+  @@unique([postingNumber])
 }
