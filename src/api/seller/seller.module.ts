@@ -1,11 +1,12 @@
 import { Module } from "@nestjs/common";
 import { HttpModule } from "@nestjs/axios";
 import { SellerApiService } from "./seller.service";
+import { SELLER_CLIENT_ID, SELLER_API_KEY, OZON_SELLER_API_URL } from "@/config";
 
 @Module({
   imports: [
     HttpModule.register({
-      baseURL: "https://api-seller.ozon.ru",
+      baseURL: OZON_SELLER_API_URL,
       headers: {
         "Content-Type": "application/json",
         "Client-Id": SELLER_CLIENT_ID,
@@ -17,3 +18,4 @@ import { SellerApiService } from "./seller.service";
   exports: [SellerApiService],
 })
 export class SellerApiModule {}
+
