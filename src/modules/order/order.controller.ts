@@ -10,4 +10,9 @@ export class OrderController {
   savePostings(@Query() dto: GetPostingsDto) {
     return this.orderService.saveOrders(dto);
   }
+
+  @Get('sync-pending')
+  updatePending() {
+    return this.orderService.updateNotDelivered();
+  }
 }

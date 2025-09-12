@@ -44,4 +44,28 @@ export class OrderService {
         await this.prisma.$transaction(operations);
         return postings.length;
     }
+
+    async updateNotDelivered() {
+        const lastOrder = await this.prisma.order.findFirst({
+            where: {status: {notIn: ['delivered', 'cancelled']}},
+            orderBy: {createdAt: 'desc'},
+        });
+
+        if (!lastOrder) {
+            return 0;
+        }
+
+        const dto: GetPostingsDto = {
+            filter: {
+                since: lastOrder.createdAt.toISOString(),
+                to: new Date().toISOString(),
+            },
+            with: {
+                analytics_data: true,
+                financial_data: true,
+            },
+        };
+
+        return this.saveOrders(dto);
+    }
 }
