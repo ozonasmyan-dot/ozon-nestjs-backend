@@ -44,7 +44,7 @@ export class OrderService {
             return this.orderRepository.upsert(data);
         });
 
-        await this.orderRepository.transaction(operations);
+        await this.orderRepository.transaction(operations as any);
         return postings.length;
     }
 
@@ -60,10 +60,7 @@ export class OrderService {
                 since: lastOrder.createdAt.toISOString(),
                 to: new Date().toISOString(),
             },
-            with: {
-                analytics_data: true,
-                financial_data: true,
-            },
+            limit: 1000
         };
 
         return this.saveOrders(dto);
