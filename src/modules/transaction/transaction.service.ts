@@ -1,29 +1,29 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
+import { TransactionRepository } from './transaction.repository';
 
 @Injectable()
 export class TransactionService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly repository: TransactionRepository) {}
 
   create(data: CreateTransactionDto) {
-    return this.prisma.transaction.create({ data });
+    return this.repository.create(data);
   }
 
   findAll() {
-    return this.prisma.transaction.findMany();
+    return this.repository.findAll();
   }
 
   findOne(id: string) {
-    return this.prisma.transaction.findUnique({ where: { id } });
+    return this.repository.findById(id);
   }
 
   update(id: string, data: UpdateTransactionDto) {
-    return this.prisma.transaction.update({ where: { id }, data });
+    return this.repository.update(id, data);
   }
 
   remove(id: string) {
-    return this.prisma.transaction.delete({ where: { id } });
+    return this.repository.remove(id);
   }
 }

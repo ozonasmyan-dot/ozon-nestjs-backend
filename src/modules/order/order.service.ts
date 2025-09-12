@@ -1,19 +1,18 @@
-import {Injectable} from '@nestjs/common';
-import {PrismaService} from '@/prisma/prisma.service';
-import {CreateOrderDto} from './dto/create-order.dto';
+import { Injectable } from '@nestjs/common';
+import { CreateOrderDto } from './dto/create-order.dto';
 import {GetPostingsDto} from '@/api/seller/dto/get-postings.dto';
 import {PostingApiService} from '@/api/seller/posting.service';
+import { OrderRepository } from './order.repository';
 
 @Injectable()
 export class OrderService {
     constructor(
-        private prisma: PrismaService,
+        private readonly orderRepository: OrderRepository,
         private readonly postingApi: PostingApiService,
-    ) {
-    }
+    ) {}
 
     async sync(dto: GetPostingsDto) {
-        const ordersCount = await this.prisma.order.count();
+        const ordersCount = await this.orderRepository.count();
         if (ordersCount === 0) {
             return this.saveOrders(dto);
         }
@@ -42,22 +41,15 @@ export class OrderService {
                 currencyCode: financial.currency_code ?? 'RUB',
             };
 
-            return this.prisma.order.upsert({
-                where: {postingNumber: data.postingNumber},
-                create: data,
-                update: data,
-            });
+            return this.orderRepository.upsert(data);
         });
 
-        await this.prisma.$transaction(operations);
+        await this.orderRepository.transaction(operations);
         return postings.length;
     }
 
     async updateNotDelivered() {
-        const lastOrder = await this.prisma.order.findFirst({
-            where: {status: {notIn: ['delivered', 'cancelled']}},
-            orderBy: {createdAt: 'desc'},
-        });
+        const lastOrder = await this.orderRepository.findLastNotDelivered();
 
         if (!lastOrder) {
             return 0;
