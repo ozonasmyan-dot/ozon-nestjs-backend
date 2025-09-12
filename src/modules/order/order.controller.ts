@@ -2,6 +2,7 @@ import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/commo
 import { OrderService } from './order.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
+import { GetPostingsDto } from '@/api/seller/dto/get-postings.dto';
 
 @Controller('orders')
 export class OrderController {
@@ -10,6 +11,11 @@ export class OrderController {
   @Post()
   create(@Body() dto: CreateOrderDto) {
     return this.orderService.create(dto);
+  }
+
+  @Post('postings')
+  savePostings(@Body() dto: GetPostingsDto) {
+    return this.orderService.savePostings(dto);
   }
 
   @Get()
