@@ -1,22 +1,22 @@
-import { Module } from "@nestjs/common";
-import { HttpModule } from "@nestjs/axios";
-import { SellerApiService } from "./seller.service";
-import { PostingApiService } from "./posting.service";
-import { SELLER_CLIENT_ID, SELLER_API_KEY, OZON_SELLER_API_URL } from "@/config";
+import {Module} from "@nestjs/common";
+import {HttpModule} from "@nestjs/axios";
+import {SellerApiService} from "./seller.service";
+import {PostingApiService} from "./posting.service";
 
 @Module({
-  imports: [
-    HttpModule.register({
-      baseURL: OZON_SELLER_API_URL,
-      headers: {
-        "Content-Type": "application/json",
-        "Client-Id": SELLER_CLIENT_ID,
-        "Api-Key": SELLER_API_KEY,
-      },
-    }),
-  ],
-  providers: [SellerApiService, PostingApiService],
-  exports: [SellerApiService, PostingApiService],
+    imports: [
+        HttpModule.register({
+            baseURL: 'https://api-seller.ozon.ru',
+            headers: {
+                'Content-Type': 'application/json',
+                "Client-Id": "2313514",
+                "Api-Key": "6dbd1f5d-8825-45fd-b786-9a0f0f94d3b7",
+            },
+        }),
+    ],
+    providers: [SellerApiService, PostingApiService],
+    exports: [SellerApiService, PostingApiService],
 })
-export class SellerApiModule {}
+export class SellerApiModule {
+}
 

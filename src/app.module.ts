@@ -8,14 +8,13 @@ import {OrderModule} from "./modules/order/order.module";
 import { PerformanceApiModule } from "./api/performance/performance.module";
 import { SellerApiModule } from "./api/seller/seller.module";
 import ozonConfig from "@/config/ozon.config";
-import serverConfig from "@/config/server.config";
 
 @Module({
     imports: [
         ConfigModule.forRoot({
             isGlobal: true,
             envFilePath: `.env.${process.env.NODE_ENV || 'development'}`,
-            load: [ozonConfig, serverConfig]
+            load: [ozonConfig]
         }),
         PrismaModule,
         TransactionModule,

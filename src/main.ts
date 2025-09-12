@@ -1,11 +1,13 @@
 import {NestFactory} from '@nestjs/core';
 import {AppModule} from './app.module';
-import {PORT} from "@/config";
+import {OzonAxiosExceptionFilter} from "@/api/filters/ozon-exception.filter";
 
 async function bootstrap() {
     const app = await NestFactory.create(AppModule);
 
-    await app.listen(PORT);
+    app.useGlobalFilters(new OzonAxiosExceptionFilter());
+
+    await app.listen(3004);
 }
 
 bootstrap();

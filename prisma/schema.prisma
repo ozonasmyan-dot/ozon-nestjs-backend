@@ -19,26 +19,18 @@ model Transaction {
 }
 
 model Order {
-  id                   String   @id @default(cuid())
-  product              String
-  orderId              String
-  orderNumber          String
-  postingNumber        String
-  status               String
-  createdAt            DateTime
-  inProcessAt          DateTime
-  deliveryType         String
-  city                 String?
-  isPremium            Boolean
-  paymentTypeGroupName String
-  warehouseId          String
-  warehouseName        String
-  sku                  String
-  oldPrice             Int
-  price                Int
-  currencyCode         String
-  clusterFrom          String
-  clusterTo            String
+  id            String   @id @default(cuid())
+  product       String
+  orderId       String
+  orderNumber   String
+  postingNumber String
+  status        String
+  createdAt     DateTime
+  inProcessAt   DateTime
+  sku           String
+  oldPrice      Int
+  price         Int
+  currencyCode  String
 
   @@unique([postingNumber])
 }
