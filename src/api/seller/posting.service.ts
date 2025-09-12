@@ -8,11 +8,26 @@ export class PostingApiService {
     }
 
     async list(data: GetPostingsDto) {
-        const x = await this.sellerApi.client.axiosRef.post(
-            "/v2/posting/fbo/list",
-            data,
-        );
+        const limit = data.limit ?? 1000;
+        let offset = data.offset ?? 0;
+        const postings: any[] = [];
 
-        return [];
+        while (true) {
+            const {data: response} = await this.sellerApi.client.axiosRef.post(
+                "/v2/posting/fbo/list",
+                {...data, limit, offset},
+            );
+
+            const batch = response?.result?.postings ?? response?.result ?? [];
+            postings.push(...batch);
+
+            if (batch.length < limit) {
+                break;
+            }
+
+            offset += limit;
+        }
+
+        return postings;
     }
 }
