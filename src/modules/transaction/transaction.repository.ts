@@ -20,6 +20,13 @@ export class TransactionRepository {
     return this.prisma.transaction.findMany();
   }
 
+  groupByPostingNumber() {
+    return this.prisma.transaction.groupBy({
+      by: ['postingNumber'],
+      _sum: { price: true },
+    });
+  }
+
   findById(id: string) {
     return this.prisma.transaction.findUnique({ where: { id } });
   }

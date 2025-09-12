@@ -6,6 +6,11 @@ import { GetPostingsDto } from '@/api/seller/dto/get-postings.dto';
 export class OrderController {
   constructor(private readonly orderService: OrderService) {}
 
+  @Get()
+  aggregate() {
+    return this.orderService.aggregate();
+  }
+
   @Get('sync')
   sync(@Query() dto: GetPostingsDto) {
     return this.orderService.sync(dto);

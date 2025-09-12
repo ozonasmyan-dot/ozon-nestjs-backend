@@ -11,6 +11,10 @@ export class OrderRepository {
     return this.prisma.order.count();
   }
 
+  findAll(): Promise<Order[]> {
+    return this.prisma.order.findMany();
+  }
+
   upsert(data: CreateOrderDto): Promise<Order> {
     return this.prisma.order.upsert({
       where: { postingNumber: data.postingNumber },

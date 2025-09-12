@@ -1,14 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import { CreateOrderDto } from './dto/create-order.dto';
-import {GetPostingsDto} from '@/api/seller/dto/get-postings.dto';
-import {PostingApiService} from '@/api/seller/posting.service';
+import { GetPostingsDto } from '@/api/seller/dto/get-postings.dto';
+import { PostingApiService } from '@/api/seller/posting.service';
 import { OrderRepository } from './order.repository';
+import { TransactionRepository } from '@/modules/transaction/transaction.repository';
+import { Order } from '@prisma/client';
 
 @Injectable()
 export class OrderService {
     constructor(
         private readonly orderRepository: OrderRepository,
         private readonly postingApi: PostingApiService,
+        private readonly transactionRepository: TransactionRepository,
     ) {}
 
     async sync(dto: GetPostingsDto) {
@@ -64,5 +67,21 @@ export class OrderService {
         };
 
         return this.saveOrders(dto);
+    }
+
+    async aggregate(): Promise<(Order & { transactionTotal: number })[]> {
+        const [orders, grouped] = await Promise.all([
+            this.orderRepository.findAll(),
+            this.transactionRepository.groupByPostingNumber(),
+        ]);
+
+        const transactionsMap = new Map(
+            grouped.map((g: any) => [g.postingNumber, g._sum.price ?? 0]),
+        );
+
+        return orders.map((order) => ({
+            ...order,
+            transactionTotal: transactionsMap.get(order.postingNumber) ?? 0,
+        }));
     }
 }
