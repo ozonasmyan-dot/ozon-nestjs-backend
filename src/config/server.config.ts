@@ -1,5 +1,9 @@
+import {
+    PORT
+} from ".";
+
 export default () => ({
     server: {
-        port: 3000,
+        PORT,
     }
 });

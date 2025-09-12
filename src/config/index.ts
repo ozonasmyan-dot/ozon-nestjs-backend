@@ -7,3 +7,4 @@ export const OZON_SELLER_API_URL = "https://api-seller.ozon.ru";
 export const OZON_PERFORMANCE_API_URL = "https://api-performance.ozon.ru:443/";
 export const OZON_PERFORMANCE_TOKEN_URL = `${OZON_PERFORMANCE_API_URL}api/client/token`;
 
+export const PORT = 4040;
