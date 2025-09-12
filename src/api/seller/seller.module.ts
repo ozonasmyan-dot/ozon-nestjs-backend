@@ -2,6 +2,7 @@ import {Module} from "@nestjs/common";
 import {HttpModule} from "@nestjs/axios";
 import {SellerApiService} from "./seller.service";
 import {PostingApiService} from "./posting.service";
+import {TransactionApiService} from "./transaction.service";
 
 @Module({
     imports: [
@@ -14,8 +15,8 @@ import {PostingApiService} from "./posting.service";
             },
         }),
     ],
-    providers: [SellerApiService, PostingApiService],
-    exports: [SellerApiService, PostingApiService],
+    providers: [SellerApiService, PostingApiService, TransactionApiService],
+    exports: [SellerApiService, PostingApiService, TransactionApiService],
 })
 export class SellerApiModule {
 }
