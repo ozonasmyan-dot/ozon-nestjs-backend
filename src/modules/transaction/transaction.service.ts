@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { TransactionRepository } from './transaction.repository';
 import { TransactionApiService } from '@/api/seller/transaction.service';
-import * as dayjs from 'dayjs';
 import { TransactionEntity } from './entities/transaction.entity';
 
 @Injectable()
@@ -16,76 +15,66 @@ export class TransactionService {
     const last = count === 0 ? null : await this.repository.findLast();
 
     // если нет записей, стартуем с октября 2024
-    let from = last?.date ?? new Date('2024-10-01T00:00:00.000Z');
-    const now = new Date();
+    const from = last?.date ?? new Date('2024-10-01T00:00:00.000Z');
+    const to = new Date();
+
+    const transactions = await this.transactionApi.list({
+      filter: {
+        date: {
+          from: from.toISOString(),
+          to: to.toISOString(),
+        },
+      },
+    });
 
     let total = 0;
 
-    while (from < now) {
-      // конец месяца от текущего from
-      let to = dayjs(from).add(1, 'month').toDate();
-      if (to > now) {
-        to = now;
-      }
+    if (transactions.length) {
+      const operations: TransactionEntity[] = [];
 
-      const transactions = await this.transactionApi.list({
-        filter: {
-          date: {
-            from: from.toISOString(),
-            to: to.toISOString(),
-          },
-        },
-      });
+      for (const t of transactions) {
+        const services = Array.isArray(t.services) ? t.services : [];
 
-      if (transactions.length) {
-        const operations: TransactionEntity[] = [];
-
-        for (const t of transactions) {
-          const services = Array.isArray(t.services) ? t.services : [];
-
-          for (const s of services) {
-            operations.push(
-              new TransactionEntity({
-                operationId: String(t.operation_id ?? ''),
-                operationType: t.operation_type ?? '',
-                operationTypeName: t.operation_type_name ?? '',
-                operationServiceName: s.name ?? '',
-                date: new Date(t.transaction_date ?? t.date ?? Date.now()),
-                type: t.type ?? '',
-                postingNumber: t.posting?.posting_number ?? '',
-                price: Number(s.price ?? 0),
-              }),
-            );
-          }
-
-          const saleCommission = Number(t.sale_commission ?? 0);
-          if (saleCommission !== 0) {
-            operations.push(
-              new TransactionEntity({
-                operationId: String(t.operation_id ?? ''),
-                operationType: t.operation_type ?? '',
-                operationTypeName: t.operation_type_name ?? '',
-                operationServiceName: 'SaleCommission',
-                date: new Date(t.transaction_date ?? t.date ?? Date.now()),
-                type: t.type ?? '',
-                postingNumber: t.posting?.posting_number ?? '',
-                price: saleCommission,
-              }),
-            );
-          }
-        }
-
-        if (operations.length) {
-          const queries = operations.map((op) =>
-              this.repository.create(op) // здесь должен вернуться Prisma Promise
+        for (const s of services) {
+          operations.push(
+            new TransactionEntity({
+              operationId: String(t.operation_id ?? ''),
+              operationType: t.operation_type ?? '',
+              operationTypeName: t.operation_type_name ?? '',
+              operationServiceName: s.name ?? '',
+              date: new Date(t.transaction_date ?? t.date ?? Date.now()),
+              type: t.type ?? '',
+              postingNumber: t.posting?.posting_number ?? '',
+              price: Number(s.price ?? 0),
+            }),
           );
+        }
 
-          await this.repository.transaction(queries);
-          total += operations.length;
+        const saleCommission = Number(t.sale_commission ?? 0);
+        if (saleCommission !== 0) {
+          operations.push(
+            new TransactionEntity({
+              operationId: String(t.operation_id ?? ''),
+              operationType: t.operation_type ?? '',
+              operationTypeName: t.operation_type_name ?? '',
+              operationServiceName: 'SaleCommission',
+              date: new Date(t.transaction_date ?? t.date ?? Date.now()),
+              type: t.type ?? '',
+              postingNumber: t.posting?.posting_number ?? '',
+              price: saleCommission,
+            }),
+          );
         }
       }
 
-      from = dayjs(to).add(1, "day").toDate();
+      if (operations.length) {
+        const queries = operations.map((op) =>
+            this.repository.create(op) // здесь должен вернуться Prisma Promise
+        );
+
+        await this.repository.transaction(queries);
+        total += operations.length;
+      }
     }
 
     return total;
