@@ -12,6 +12,13 @@ interface EconomyUnit {
   product: string;
 }
 
+export interface EconomyResult {
+  status: string;
+  costPrice: number;
+  totalServices: number;
+  margin: number;
+}
+
 const sbsMap: Record<string, number> = {
   "1828048543": 771,
   "1828048513": 771,
@@ -22,35 +29,39 @@ const sbsMap: Record<string, number> = {
   "2586059276": 151,
 };
 
-const D = (v: any) => new Decimal(v ?? 0);
+const toDecimal = (value: number | string | undefined) =>
+  new Decimal(value ?? 0);
 
-export const economy = (unit: EconomyUnit) => {
-  const price = D(unit.price);
-  let costPrice = D(0);
-  let status = unit.statusOzon;
-
-  const totalServices = (unit.services ?? []).reduce(
-    (sum: Decimal, s: any) =>
-      sum.plus(D(String(s?.price ?? 0).replace(",", "."))),
-    D(0),
+export const economy = ({
+  price,
+  services = [],
+  statusOzon,
+  product,
+}: EconomyUnit): EconomyResult => {
+  const priceDecimal = toDecimal(price);
+  const totalServices = services.reduce(
+    (sum, { price }) => sum.plus(toDecimal(price)),
+    new Decimal(0),
   );
 
-  let margin = D(totalServices);
-
-  const hasSalesCommission = (unit.services ?? []).some(
-    (t: any) => String(t?.name).trim() === "SalesCommission",
+  const hasSalesCommission = services.some(
+    (s) => s.name.trim() === "SalesCommission",
   );
-  const salesCommissionSum = (unit.services ?? [])
-    .filter((s: any) => s.name === "SalesCommission")
-    .reduce((sum: Decimal, s: any) => sum.plus(D(s?.price ?? 0)), D(0));
+  const salesCommissionSum = services
+    .filter((s) => s.name === "SalesCommission")
+    .reduce((sum, s) => sum.plus(toDecimal(s.price)), new Decimal(0));
 
-  const returnPVZ = (unit.services ?? []).findIndex(
-    (t: any) =>
-      t.name === "MarketplaceServiceItemRedistributionReturnsPVZ" ||
-      t.name === "MarketplaceServiceItemReturnFlowLogistic",
+  const returnPVZ = services.findIndex(
+    (s) =>
+      s.name === "MarketplaceServiceItemRedistributionReturnsPVZ" ||
+      s.name === "MarketplaceServiceItemReturnFlowLogistic",
   );
 
-  switch (unit.statusOzon) {
+  let status = statusOzon || "Неизвестный статус";
+  let costPrice = new Decimal(0);
+  let margin = new Decimal(totalServices);
+
+  switch (statusOzon) {
     case "cancelled":
       status = returnPVZ !== -1 ? "Отмена ПВЗ" : "Моментальная отмена";
       break;
@@ -67,18 +78,15 @@ export const economy = (unit: EconomyUnit) => {
       if (hasSalesCommission) {
         if (salesCommissionSum.isNegative()) {
           status = "Доставлен";
-          costPrice = D(sbsMap[unit.product]);
-          margin = price.minus(costPrice).plus(totalServices);
+          costPrice = toDecimal(sbsMap[product]);
+          margin = priceDecimal.minus(costPrice).plus(totalServices);
         } else {
           status = "Возврат";
         }
       } else {
         status = "Ожидаем оплаты";
       }
-
       break;
-    default:
-      status = unit.statusOzon || "Неизвестный статус";
   }
 
   return {
