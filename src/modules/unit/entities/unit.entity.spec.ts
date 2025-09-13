@@ -3,8 +3,8 @@ import { OzonStatus } from '../ts/ozon-status.enum';
 import { CustomStatus } from '../ts/custom-status.enum';
 
 describe('UnitEntity status calculation', () => {
-  const tx = (name: string, price: number) =>
-    ({ operationServiceName: name, price } as any);
+  // helper to mock transaction objects used in tests
+  const tx = (name, price) => ({ operationServiceName: name, price });
 
   it('handles Cancelled with return PVZ', () => {
     const unit = new UnitEntity({
