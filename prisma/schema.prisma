@@ -15,7 +15,7 @@ model Transaction {
   date                 DateTime
   type                 String
   postingNumber        String
-  price                Int
+  price                Float
 
   @@unique([operationServiceName, postingNumber])
 }
