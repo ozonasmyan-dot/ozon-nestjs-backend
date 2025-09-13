@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
-import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { TransactionRepository } from './transaction.repository';
 import { TransactionApiService } from '@/api/seller/transaction.service';
+import * as dayjs from 'dayjs';
 
 @Injectable()
 export class TransactionService {
@@ -11,38 +11,21 @@ export class TransactionService {
     private readonly transactionApi: TransactionApiService,
   ) {}
 
-  create(data: CreateTransactionDto) {
-    return this.repository.create(data);
-  }
-
-  findAll() {
-    return this.repository.findAll();
-  }
-
-  findOne(id: string) {
-    return this.repository.findById(id);
-  }
-
-  update(id: string, data: UpdateTransactionDto) {
-    return this.repository.update(id, data);
-  }
-
-  remove(id: string) {
-    return this.repository.remove(id);
-  }
-
   async sync() {
     const count = await this.repository.count();
     const last = count === 0 ? null : await this.repository.findLast();
+
+    // если нет записей, стартуем с октября 2024
     let from = last?.date ?? new Date('2024-10-01T00:00:00.000Z');
     const now = new Date();
+
     let total = 0;
 
     while (from < now) {
-      const to = new Date(from);
-      to.setMonth(to.getMonth() + 1);
+      // конец месяца от текущего from
+      let to = dayjs(from).add(1, 'month').toDate();
       if (to > now) {
-        to.setTime(now.getTime());
+        to = now;
       }
 
       const transactions = await this.transactionApi.list({
@@ -55,47 +38,48 @@ export class TransactionService {
       });
 
       if (transactions.length) {
-        const operations = transactions.flatMap((t: any) => {
-          const base: CreateTransactionDto = {
-            operationType: t.operation_type ?? '',
-            operationTypeName: t.operation_type_name ?? '',
-            operationServiceName: t.operation_service_name ?? '',
-            date: new Date(t.transaction_date ?? t.date ?? Date.now()),
-            type: t.type ?? '',
-            postingNumber: t.posting_number ?? '',
-            price: Number(t.price ?? t.amount ?? 0),
-          };
+        const operations: CreateTransactionDto[] = [];
 
-          const ops: any[] = [this.repository.create(base)];
-
+        for (const t of transactions) {
           const services = Array.isArray(t.services) ? t.services : [];
+
           for (const s of services) {
-            const serviceData: CreateTransactionDto = {
-              ...base,
+            operations.push({
+              operationType: t.operation_type ?? '',
+              operationTypeName: t.operation_type_name ?? '',
               operationServiceName: s.name ?? '',
+              date: new Date(t.transaction_date ?? t.date ?? Date.now()),
+              type: t.type ?? '',
+              postingNumber: t.posting?.posting_number ?? '',
               price: Number(s.price ?? 0),
-            };
-            ops.push(this.repository.create(serviceData));
+            });
           }
 
           const saleCommission = Number(t.sale_commission ?? 0);
           if (saleCommission !== 0) {
-            const commissionData: CreateTransactionDto = {
-              ...base,
+            operations.push({
+              operationType: t.operation_type ?? '',
+              operationTypeName: t.operation_type_name ?? '',
               operationServiceName: 'sale_commission',
+              date: new Date(t.transaction_date ?? t.date ?? Date.now()),
+              type: t.type ?? '',
+              postingNumber: t.posting?.posting_number ?? '',
               price: saleCommission,
-            };
-            ops.push(this.repository.create(commissionData));
+            });
           }
+        }
 
-          return ops;
-        });
+        if (operations.length) {
+          const queries = operations.map((op) =>
+              this.repository.create(op) // здесь должен вернуться Prisma Promise
+          );
 
-        await this.repository.transaction(operations as any);
-        total += operations.length;
+          await this.repository.transaction(queries);
+          total += operations.length;
+        }
       }
 
-      from = to;
+      from = dayjs(to).add(1, 'millisecond').toDate();
     }
 
     return total;

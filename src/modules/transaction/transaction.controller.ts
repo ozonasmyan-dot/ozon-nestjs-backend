@@ -7,33 +7,8 @@ import { UpdateTransactionDto } from './dto/update-transaction.dto';
 export class TransactionController {
   constructor(private readonly transactionService: TransactionService) {}
 
-  @Post()
-  create(@Body() dto: CreateTransactionDto) {
-    return this.transactionService.create(dto);
-  }
-
   @Get('sync')
   sync() {
     return this.transactionService.sync();
-  }
-
-  @Get()
-  findAll() {
-    return this.transactionService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.transactionService.findOne(id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateTransactionDto) {
-    return this.transactionService.update(id, dto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.transactionService.remove(id);
   }
 }
