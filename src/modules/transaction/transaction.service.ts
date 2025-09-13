@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { TransactionRepository } from './transaction.repository';
 import { TransactionApiService } from '@/api/seller/transaction.service';
 import * as dayjs from 'dayjs';
+import { TransactionEntity } from './entities/transaction.entity';
 
 @Injectable()
 export class TransactionService {
@@ -38,36 +38,40 @@ export class TransactionService {
       });
 
       if (transactions.length) {
-        const operations: CreateTransactionDto[] = [];
+        const operations: TransactionEntity[] = [];
 
         for (const t of transactions) {
           const services = Array.isArray(t.services) ? t.services : [];
 
           for (const s of services) {
-            operations.push({
-              operationId: String(t.operation_id ?? ''),
-              operationType: t.operation_type ?? '',
-              operationTypeName: t.operation_type_name ?? '',
-              operationServiceName: s.name ?? '',
-              date: new Date(t.transaction_date ?? t.date ?? Date.now()),
-              type: t.type ?? '',
-              postingNumber: t.posting?.posting_number ?? '',
-              price: Number(s.price ?? 0),
-            });
+            operations.push(
+              new TransactionEntity({
+                operationId: String(t.operation_id ?? ''),
+                operationType: t.operation_type ?? '',
+                operationTypeName: t.operation_type_name ?? '',
+                operationServiceName: s.name ?? '',
+                date: new Date(t.transaction_date ?? t.date ?? Date.now()),
+                type: t.type ?? '',
+                postingNumber: t.posting?.posting_number ?? '',
+                price: Number(s.price ?? 0),
+              }),
+            );
           }
 
           const saleCommission = Number(t.sale_commission ?? 0);
           if (saleCommission !== 0) {
-            operations.push({
-              operationId: String(t.operation_id ?? ''),
-              operationType: t.operation_type ?? '',
-              operationTypeName: t.operation_type_name ?? '',
-              operationServiceName: 'SaleCommission',
-              date: new Date(t.transaction_date ?? t.date ?? Date.now()),
-              type: t.type ?? '',
-              postingNumber: t.posting?.posting_number ?? '',
-              price: saleCommission,
-            });
+            operations.push(
+              new TransactionEntity({
+                operationId: String(t.operation_id ?? ''),
+                operationType: t.operation_type ?? '',
+                operationTypeName: t.operation_type_name ?? '',
+                operationServiceName: 'SaleCommission',
+                date: new Date(t.transaction_date ?? t.date ?? Date.now()),
+                type: t.type ?? '',
+                postingNumber: t.posting?.posting_number ?? '',
+                price: saleCommission,
+              }),
+            );
           }
         }
 
