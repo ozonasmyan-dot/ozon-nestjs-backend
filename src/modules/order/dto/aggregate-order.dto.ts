@@ -7,7 +7,11 @@ export class AggregateOrderDto {
 
   @IsOptional()
   @IsDateString()
-  createdAt?: string;
+  from?: string;
+
+  @IsOptional()
+  @IsDateString()
+  to?: string;
 
   @IsOptional()
   @IsString()
