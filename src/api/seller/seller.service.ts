@@ -1,6 +1,6 @@
 import {HttpService} from "@nestjs/axios";
 import {Injectable} from "@nestjs/common";
-import {waitRateLimit} from "@/shared/utils/rateLimit";
+import {waitRateLimit} from "@/shared/utils/rate-limit.utils";
 
 @Injectable()
 export class SellerApiService {

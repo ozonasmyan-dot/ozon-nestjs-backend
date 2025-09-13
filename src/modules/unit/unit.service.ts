@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { OrderRepository } from '@/modules/order/order.repository';
 import { TransactionRepository } from '@/modules/transaction/transaction.repository';
-import { Order, Transaction, Prisma } from '@prisma/client';
-import { economy } from './economy';
+import { Transaction, Prisma } from '@prisma/client';
 import { AggregateUnitDto } from './dto/aggregate-unit.dto';
+import { UnitEntity } from './entities/unit.entity';
 
 @Injectable()
 export class UnitService {
@@ -27,13 +27,7 @@ export class UnitService {
   }
 
   async aggregate(dto: AggregateUnitDto): Promise<{
-    items: (Order & {
-      transactionTotal: number;
-      transactions: Transaction[];
-      costPrice: number;
-      totalServices: number;
-      margin: number;
-    })[];
+    items: UnitEntity[];
     totals: {
       statuses: Record<string, number>;
       margin: number;
@@ -79,22 +73,11 @@ export class UnitService {
         ...new Map(orderTransactions.map((t) => [t.id, t])).values(),
       ];
       const transactionTotal = uniqueTxs.reduce((sum, t) => sum + t.price, 0);
-      const services = uniqueTxs.map((t) => ({
-        name: t.operationServiceName,
-        price: t.price,
-      }));
-      const economyResult = economy({
-        price: order.price,
-        services,
-        statusOzon: order.status,
-        product: order.sku,
-      });
-      return {
+      return new UnitEntity({
         ...order,
-        ...economyResult,
         transactionTotal,
         transactions: uniqueTxs,
-      };
+      });
     });
 
     const filteredItems = dto.status
