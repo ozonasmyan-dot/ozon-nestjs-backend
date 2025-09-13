@@ -70,6 +70,21 @@ export class OrderService {
     return this.saveOrders(dto);
   }
 
+  private groupTransactionsByPostingNumber(
+    transactions: Transaction[],
+  ): Map<string, Transaction[]> {
+    return transactions.reduce((map, tx) => {
+      if (!tx.postingNumber) {
+        return map;
+      }
+
+      const list = map.get(tx.postingNumber) ?? [];
+      list.push(tx);
+      map.set(tx.postingNumber, list);
+      return map;
+    }, new Map<string, Transaction[]>());
+  }
+
   async aggregate(): Promise<
     (
       Order & {
@@ -86,22 +101,15 @@ export class OrderService {
       this.transactionRepository.findAll(),
     ]);
 
-    const byNumber = new Map<string, Transaction[]>();
-
-    transactions.forEach((tx) => {
-      if (tx.postingNumber) {
-        const arr = byNumber.get(tx.postingNumber) ?? [];
-        arr.push(tx);
-        byNumber.set(tx.postingNumber, arr);
-      }
-    });
+    const byNumber = this.groupTransactionsByPostingNumber(transactions);
 
     return orders.map((order) => {
-      const txsByPosting = byNumber.get(order.postingNumber) ?? [];
-      const txsByOrder = byNumber.get(order.orderNumber) ?? [];
-      const merged = [...txsByPosting, ...txsByOrder];
+      const numbers = [order.postingNumber, order.orderNumber];
+      const orderTransactions = numbers.flatMap(
+        (num) => byNumber.get(num) ?? [],
+      );
       const uniqueTxs = [
-        ...new Map(merged.map((t) => [t.id, t])).values(),
+        ...new Map(orderTransactions.map((t) => [t.id, t])).values(),
       ];
       const transactionTotal = uniqueTxs.reduce((sum, t) => sum + t.price, 0);
       const services = uniqueTxs.map((t) => ({
