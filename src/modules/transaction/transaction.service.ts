@@ -45,6 +45,7 @@ export class TransactionService {
 
           for (const s of services) {
             operations.push({
+              operationId: String(t.operation_id ?? ''),
               operationType: t.operation_type ?? '',
               operationTypeName: t.operation_type_name ?? '',
               operationServiceName: s.name ?? '',
@@ -58,6 +59,7 @@ export class TransactionService {
           const saleCommission = Number(t.sale_commission ?? 0);
           if (saleCommission !== 0) {
             operations.push({
+              operationId: String(t.operation_id ?? ''),
               operationType: t.operation_type ?? '',
               operationTypeName: t.operation_type_name ?? '',
               operationServiceName: 'SaleCommission',

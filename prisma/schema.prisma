@@ -9,6 +9,7 @@ datasource db {
 
 model Transaction {
   id                   String   @id @default(cuid())
+  operationId          String
   operationType        String
   operationTypeName    String
   operationServiceName String
@@ -17,7 +18,7 @@ model Transaction {
   postingNumber        String
   price                Float
 
-  @@unique([operationServiceName, postingNumber, type])
+  @@unique([operationServiceName, postingNumber, type, operationId])
 }
 
 model Order {
