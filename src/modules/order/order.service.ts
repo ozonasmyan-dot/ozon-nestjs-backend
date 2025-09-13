@@ -4,8 +4,9 @@ import { GetPostingsDto } from "@/api/seller/dto/get-postings.dto";
 import { PostingApiService } from "@/api/seller/posting.service";
 import { OrderRepository } from "./order.repository";
 import { TransactionRepository } from "@/modules/transaction/transaction.repository";
-import { Order, Transaction } from "@prisma/client";
+import { Order, Transaction, Prisma } from "@prisma/client";
 import { economy } from "./economy";
+import { AggregateOrderDto } from "./dto/aggregate-order.dto";
 
 @Injectable()
 export class OrderService {
@@ -85,7 +86,7 @@ export class OrderService {
     }, new Map<string, Transaction[]>());
   }
 
-  async aggregate(): Promise<
+  async aggregate(dto: AggregateOrderDto): Promise<
     (
       Order & {
         transactionTotal: number;
@@ -96,8 +97,22 @@ export class OrderService {
       }
     )[]
   > {
+    const where: Prisma.OrderWhereInput = {};
+    if (dto.postingNumber) {
+      where.postingNumber = dto.postingNumber;
+    }
+    if (dto.status) {
+      where.status = dto.status;
+    }
+    if (dto.sku) {
+      where.sku = dto.sku;
+    }
+    if (dto.createdAt) {
+      where.createdAt = new Date(dto.createdAt);
+    }
+
     const [orders, transactions] = await Promise.all([
-      this.orderRepository.findAll(),
+      this.orderRepository.findAll(where),
       this.transactionRepository.findAll(),
     ]);
 
