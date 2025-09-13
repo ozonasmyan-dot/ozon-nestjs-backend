@@ -5,6 +5,7 @@ import {AppService} from "./app.service";
 import {PrismaModule} from "./prisma/prisma.module";
 import {TransactionModule} from "./modules/transaction/transaction.module";
 import {OrderModule} from "./modules/order/order.module";
+import { UnitModule } from './modules/unit/unit.module';
 import { PerformanceApiModule } from "./api/performance/performance.module";
 import { SellerApiModule } from "./api/seller/seller.module";
 import ozonConfig from "@/config/ozon.config";
@@ -19,6 +20,7 @@ import ozonConfig from "@/config/ozon.config";
         PrismaModule,
         TransactionModule,
         OrderModule,
+        UnitModule,
         PerformanceApiModule,
         SellerApiModule,
     ],
