@@ -86,18 +86,14 @@ export class OrderService {
     }, new Map<string, Transaction[]>());
   }
 
-  async aggregate(
-    dto: AggregateOrderDto,
-  ): Promise<{
-    items: (
-      Order & {
-        transactionTotal: number;
-        transactions: Transaction[];
-        costPrice: number;
-        totalServices: number;
-        margin: number;
-      }
-    )[];
+  async aggregate(dto: AggregateOrderDto): Promise<{
+    items: (Order & {
+      transactionTotal: number;
+      transactions: Transaction[];
+      costPrice: number;
+      totalServices: number;
+      margin: number;
+    })[];
     totals: {
       statuses: Record<string, number>;
       margin: number;
@@ -108,9 +104,6 @@ export class OrderService {
     const where: Prisma.OrderWhereInput = {};
     if (dto.postingNumber) {
       where.postingNumber = dto.postingNumber;
-    }
-    if (dto.status) {
-      where.status = dto.status;
     }
     if (dto.sku) {
       where.sku = dto.sku;
@@ -164,7 +157,11 @@ export class OrderService {
       };
     });
 
-    const totals = items.reduce(
+    const filteredItems = dto.status
+      ? items.filter((item) => item.status === dto.status)
+      : items;
+
+    const totals = filteredItems.reduce(
       (acc, item) => {
         acc.margin += item.margin;
         acc.price += item.price;
@@ -180,6 +177,6 @@ export class OrderService {
       },
     );
 
-    return { items, totals: [totals] };
+    return { items: filteredItems, totals: [totals] };
   }
 }
