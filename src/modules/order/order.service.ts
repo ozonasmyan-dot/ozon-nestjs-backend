@@ -1,8 +1,8 @@
 import { Injectable } from "@nestjs/common";
-import { CreateOrderDto } from "./dto/create-order.dto";
 import { GetPostingsDto } from "@/api/seller/dto/get-postings.dto";
 import { PostingApiService } from "@/api/seller/posting.service";
 import { OrderRepository } from "./order.repository";
+import { OrderEntity } from "./entities/order.entity";
 
 @Injectable()
 export class OrderService {
@@ -27,7 +27,7 @@ export class OrderService {
       const product = posting.products?.[0] ?? {};
       const financial = posting.financial_data?.products?.[0] ?? {};
 
-      const data: CreateOrderDto = {
+      const data = new OrderEntity({
         product: product.name ?? "",
         orderId: String(posting.order_id ?? ""),
         orderNumber: posting.order_number ?? "",
@@ -39,7 +39,7 @@ export class OrderService {
         oldPrice: Number(financial.old_price ?? product.old_price ?? 0),
         price: Number(financial.price ?? product.price ?? 0),
         currencyCode: financial.currency_code ?? "RUB",
-      };
+      });
 
       return this.orderRepository.upsert(data);
     });
@@ -55,9 +55,11 @@ export class OrderService {
       return 0;
     }
 
+    const order = new OrderEntity(lastOrder);
+
     const dto: GetPostingsDto = {
       filter: {
-        since: lastOrder.createdAt.toISOString(),
+        since: order.createdAt.toISOString(),
         to: new Date().toISOString(),
       },
       limit: 1000,
