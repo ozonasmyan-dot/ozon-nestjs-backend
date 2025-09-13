@@ -13,7 +13,16 @@ export class TransactionRepository {
   }
 
   create(data: CreateTransactionDto) {
-    return this.prisma.transaction.create({ data });
+    return this.prisma.transaction.upsert({
+      where: {
+        operationServiceName_postingNumber: {
+          operationServiceName: data.operationServiceName,
+          postingNumber: data.postingNumber,
+        },
+      },
+      create: data,
+      update: data,
+    });
   }
 
   findAll() {

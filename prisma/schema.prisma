@@ -16,6 +16,8 @@ model Transaction {
   type                 String
   postingNumber        String
   price                Int
+
+  @@unique([operationServiceName, postingNumber])
 }
 
 model Order {
