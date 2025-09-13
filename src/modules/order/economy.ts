@@ -45,10 +45,10 @@ export const economy = ({
   );
 
   const hasSalesCommission = services.some(
-    (s) => s.name.trim() === "SalesCommission",
+    (s) => s.name.trim() === "SaleCommission",
   );
   const salesCommissionSum = services
-    .filter((s) => s.name === "SalesCommission")
+    .filter((s) => s.name === "SaleCommission")
     .reduce((sum, s) => sum.plus(toDecimal(s.price)), new Decimal(0));
 
   const returnPVZ = services.findIndex(

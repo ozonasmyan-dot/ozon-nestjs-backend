@@ -17,7 +17,7 @@ model Transaction {
   postingNumber        String
   price                Float
 
-  @@unique([operationServiceName, postingNumber])
+  @@unique([operationServiceName, postingNumber, type])
 }
 
 model Order {
