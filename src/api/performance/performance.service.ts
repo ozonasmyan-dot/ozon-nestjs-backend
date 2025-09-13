@@ -6,7 +6,7 @@ import {
     PERFORMANCE_CLIENT_SECRET,
     OZON_PERFORMANCE_TOKEN_URL,
 } from "@/config";
-import {waitRateLimit} from "@/shared/utils/rateLimit";
+import {waitRateLimit} from "@/shared/utils/rate-limit.utils";
 
 @Injectable()
 export class PerformanceApiService {

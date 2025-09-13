@@ -6,7 +6,7 @@ import { EconomyContext } from '../ts/economy-context.interface';
 import { Service } from '../ts/service.interface';
 import { EconomyResult } from '../ts/economy-result.interface';
 import { OzonStatus } from '../ts/ozon-status.enum';
-import { toDecimal } from '@/shared/utils/toDecimal';
+import { toDecimalUtils } from '@/shared/utils/to-decimal.utils';
 
 export class UnitEntity extends OrderEntity {
   transactionTotal: number;
@@ -36,12 +36,12 @@ export class UnitEntity extends OrderEntity {
   }
 
   private getPriceDecimal(): Decimal {
-    return toDecimal(this.price);
+    return toDecimalUtils(this.price);
   }
 
   private getTotalServices(services: Service[]): Decimal {
     return services.reduce(
-      (sum, { price }) => sum.plus(toDecimal(price)),
+      (sum, { price }) => sum.plus(toDecimalUtils(price)),
       new Decimal(0),
     );
   }
@@ -53,7 +53,7 @@ export class UnitEntity extends OrderEntity {
   private getSalesCommissionSum(services: Service[]): Decimal {
     return services
       .filter((s) => s.name === "SaleCommission")
-      .reduce((sum, s) => sum.plus(toDecimal(s.price)), new Decimal(0));
+      .reduce((sum, s) => sum.plus(toDecimalUtils(s.price)), new Decimal(0));
   }
 
   private findReturnPVZ(services: Service[]): number {

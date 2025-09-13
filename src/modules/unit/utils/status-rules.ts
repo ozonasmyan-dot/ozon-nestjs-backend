@@ -1,5 +1,4 @@
-import Decimal from 'decimal.js';
-import { toDecimal } from '@/shared/utils/toDecimal';
+import { toDecimalUtils } from '@/shared/utils/to-decimal.utils';
 import { SBS_MAP } from '@/shared/constants/sbs-map';
 import { EconomyContext } from '../ts/economy-context.interface';
 import { StatusRule } from '../ts/status-rule.type';
@@ -12,22 +11,22 @@ const STATUS_RULES: Record<OzonStatus, StatusRule> = {
       returnPVZ !== -1
         ? CustomStatus.CancelPVZ
         : CustomStatus.InstantCancel,
-    costPrice: toDecimal(0),
+    costPrice: toDecimalUtils(0),
     margin: totalServices,
   }),
   [OzonStatus.AwaitingDeliver]: ({ totalServices }) => ({
     status: CustomStatus.AwaitingDelivery,
-    costPrice: toDecimal(0),
+    costPrice: toDecimalUtils(0),
     margin: totalServices,
   }),
   [OzonStatus.AwaitingPackaging]: ({ totalServices }) => ({
     status: CustomStatus.AwaitingPackaging,
-    costPrice: toDecimal(0),
+    costPrice: toDecimalUtils(0),
     margin: totalServices,
   }),
   [OzonStatus.Delivering]: ({ totalServices }) => ({
     status: CustomStatus.Delivering,
-    costPrice: toDecimal(0),
+    costPrice: toDecimalUtils(0),
     margin: totalServices,
   }),
   [OzonStatus.Delivered]: ({
@@ -39,19 +38,19 @@ const STATUS_RULES: Record<OzonStatus, StatusRule> = {
   }) => {
     if (hasSalesCommission) {
       if (salesCommissionSum.isNegative()) {
-        const costPrice = toDecimal(SBS_MAP[product]);
+        const costPrice = toDecimalUtils(SBS_MAP[product]);
         const margin = priceDecimal.minus(costPrice).plus(totalServices);
         return { status: CustomStatus.Delivered, costPrice, margin };
       }
       return {
         status: CustomStatus.Return,
-        costPrice: toDecimal(0),
+        costPrice: toDecimalUtils(0),
         margin: totalServices,
       };
     }
     return {
       status: CustomStatus.AwaitingPayment,
-      costPrice: toDecimal(0),
+      costPrice: toDecimalUtils(0),
       margin: totalServices,
     };
   },
@@ -59,7 +58,7 @@ const STATUS_RULES: Record<OzonStatus, StatusRule> = {
 
 const DEFAULT_RULE: StatusRule = ({ statusOzon, totalServices }: EconomyContext) => ({
   status: (statusOzon as unknown as CustomStatus) || CustomStatus.Unknown,
-  costPrice: toDecimal(0),
+  costPrice: toDecimalUtils(0),
   margin: totalServices,
 });
 
