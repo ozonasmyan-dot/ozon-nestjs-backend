@@ -1,6 +1,6 @@
 import { IsDateString, IsOptional, IsString } from 'class-validator';
 
-export class AggregateOrderDto {
+export class AggregateUnitDto {
   @IsOptional()
   @IsString()
   postingNumber?: string;
