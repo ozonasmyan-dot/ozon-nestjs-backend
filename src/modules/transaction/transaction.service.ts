@@ -60,7 +60,7 @@ export class TransactionService {
             operations.push({
               operationType: t.operation_type ?? '',
               operationTypeName: t.operation_type_name ?? '',
-              operationServiceName: 'sale_commission',
+              operationServiceName: 'SaleCommission',
               date: new Date(t.transaction_date ?? t.date ?? Date.now()),
               type: t.type ?? '',
               postingNumber: t.posting?.posting_number ?? '',
@@ -79,7 +79,7 @@ export class TransactionService {
         }
       }
 
-      from = dayjs(to).add(1, 'millisecond').toDate();
+      from = dayjs(to).add(1, "day").toDate();
     }
 
     return total;
