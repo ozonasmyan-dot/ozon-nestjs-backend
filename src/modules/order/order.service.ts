@@ -5,6 +5,7 @@ import { PostingApiService } from "@/api/seller/posting.service";
 import { OrderRepository } from "./order.repository";
 import { TransactionRepository } from "@/modules/transaction/transaction.repository";
 import { Order, Transaction } from "@prisma/client";
+import { economy } from "./economy";
 
 @Injectable()
 export class OrderService {
@@ -70,7 +71,15 @@ export class OrderService {
   }
 
   async aggregate(): Promise<
-    (Order & { transactionTotal: number; transactions: Transaction[] })[]
+    (
+      Order & {
+        transactionTotal: number;
+        transactions: Transaction[];
+        costPrice: number;
+        totalServices: number;
+        margin: number;
+      }
+    )[]
   > {
     const [orders, transactions] = await Promise.all([
       this.orderRepository.findAll(),
@@ -95,8 +104,19 @@ export class OrderService {
         ...new Map(merged.map((t) => [t.id, t])).values(),
       ];
       const transactionTotal = uniqueTxs.reduce((sum, t) => sum + t.price, 0);
+      const services = uniqueTxs.map((t) => ({
+        name: t.operationServiceName,
+        price: t.price,
+      }));
+      const economyResult = economy({
+        price: order.price,
+        services,
+        statusOzon: order.status,
+        product: order.sku,
+      });
       return {
         ...order,
+        ...economyResult,
         transactionTotal,
         transactions: uniqueTxs,
       };
