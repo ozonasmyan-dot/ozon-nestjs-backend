@@ -86,8 +86,10 @@ export class OrderService {
     }, new Map<string, Transaction[]>());
   }
 
-  async aggregate(dto: AggregateOrderDto): Promise<
-    (
+  async aggregate(
+    dto: AggregateOrderDto,
+  ): Promise<{
+    items: (
       Order & {
         transactionTotal: number;
         transactions: Transaction[];
@@ -95,8 +97,14 @@ export class OrderService {
         totalServices: number;
         margin: number;
       }
-    )[]
-  > {
+    )[];
+    totals: {
+      statuses: Record<string, number>;
+      margin: number;
+      price: number;
+      transactionTotal: number;
+    }[];
+  }> {
     const where: Prisma.OrderWhereInput = {};
     if (dto.postingNumber) {
       where.postingNumber = dto.postingNumber;
@@ -107,8 +115,19 @@ export class OrderService {
     if (dto.sku) {
       where.sku = dto.sku;
     }
-    if (dto.createdAt) {
-      where.createdAt = new Date(dto.createdAt);
+    if (dto.from || dto.to) {
+      const createdAt: Prisma.DateTimeFilter = {};
+      if (dto.from) {
+        const from = new Date(dto.from);
+        from.setHours(0, 0, 0, 0);
+        createdAt.gte = from;
+      }
+      if (dto.to) {
+        const to = new Date(dto.to);
+        to.setHours(23, 59, 59, 999);
+        createdAt.lte = to;
+      }
+      where.createdAt = createdAt;
     }
 
     const [orders, transactions] = await Promise.all([
@@ -118,7 +137,7 @@ export class OrderService {
 
     const byNumber = this.groupTransactionsByPostingNumber(transactions);
 
-    return orders.map((order) => {
+    const items = orders.map((order) => {
       const numbers = [order.postingNumber, order.orderNumber];
       const orderTransactions = numbers.flatMap(
         (num) => byNumber.get(num) ?? [],
@@ -144,5 +163,23 @@ export class OrderService {
         transactions: uniqueTxs,
       };
     });
+
+    const totals = items.reduce(
+      (acc, item) => {
+        acc.margin += item.margin;
+        acc.price += item.price;
+        acc.transactionTotal += item.transactionTotal;
+        acc.statuses[item.status] = (acc.statuses[item.status] ?? 0) + 1;
+        return acc;
+      },
+      {
+        statuses: {} as Record<string, number>,
+        margin: 0,
+        price: 0,
+        transactionTotal: 0,
+      },
+    );
+
+    return { items, totals: [totals] };
   }
 }
