@@ -6,13 +6,13 @@ import { TransactionEntity } from '@/modules/transaction/entities/transaction.en
 describe('UnitEntity status mapping', () => {
   const basePrice = 1000;
   const sku = '1828048543';
-  const tx = (name: string, price: number) =>
+  const tx = (name, price) =>
     new TransactionEntity({
       operationServiceName: name,
       price,
     } as any);
 
-  const createUnit = (status: string, transactions: any[] = []) =>
+  const createUnit = (status, transactions = []) =>
     new UnitEntity({
       status,
       price: basePrice,
