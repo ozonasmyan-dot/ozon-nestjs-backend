@@ -1,7 +1,7 @@
 import {Injectable} from "@nestjs/common";
 import {SellerApiService} from "./seller.service";
 import {GetTransactionsDto} from "./dto/get-transactions.dto";
-import * as dayjs from 'dayjs';
+import dayjs from 'dayjs';
 
 @Injectable()
 export class TransactionApiService {
