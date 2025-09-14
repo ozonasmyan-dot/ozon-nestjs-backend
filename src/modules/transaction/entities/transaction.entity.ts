@@ -1,4 +1,8 @@
-import { Transaction } from '@prisma/client';
+import { Transaction as PrismaTransaction } from '@prisma/client';
+
+export interface Transaction extends PrismaTransaction {
+  inOrder: boolean;
+}
 
 export class TransactionEntity implements Transaction {
   id: string;
@@ -7,6 +11,7 @@ export class TransactionEntity implements Transaction {
   date: Date;
   postingNumber: string;
   price: number;
+  inOrder = false;
 
   constructor(partial: Partial<Transaction>) {
     Object.assign(this, partial);

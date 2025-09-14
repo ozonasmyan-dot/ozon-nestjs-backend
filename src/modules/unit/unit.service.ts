@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { OrderRepository } from '@/modules/order/order.repository';
 import { TransactionRepository } from '@/modules/transaction/transaction.repository';
-import { Transaction } from '@prisma/client';
+import { Transaction } from '@/modules/transaction/entities/transaction.entity';
 import { AggregateUnitDto } from './dto/aggregate-unit.dto';
 import { UnitEntity } from './entities/unit.entity';
 import { buildOrderWhere } from './utils/order-filter.utils';
@@ -45,11 +45,17 @@ export class UnitService {
 
     const byNumber = this.groupTransactionsByPostingNumber(transactions);
 
+    const usedIds = new Set<string>();
+
     const items = orders.map((order) => {
       const numbers = [order.postingNumber, order.orderNumber];
       const orderTransactions = numbers.flatMap(
         (num) => byNumber.get(num) ?? [],
       );
+      orderTransactions.forEach((tx) => {
+        tx.inOrder = true;
+        usedIds.add(tx.id);
+      });
       const uniqueTxs = [
         ...new Map(orderTransactions.map((t) => [t.id, t])).values(),
       ];
@@ -68,6 +74,13 @@ export class UnitService {
     const filteredItems = statuses
       ? items.filter((item) => statuses.includes(item.status))
       : items;
+
+    if (usedIds.size) {
+      const operations = [...usedIds].map((id) =>
+        this.transactionRepository.update(id, { inOrder: true }),
+      );
+      await this.transactionRepository.transaction(operations);
+    }
 
     const totals = filteredItems.reduce(
       (acc, item) => {
