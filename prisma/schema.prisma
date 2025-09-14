@@ -14,6 +14,7 @@ model Transaction {
   date          DateTime
   postingNumber String
   price         Float
+  inOrder       Boolean  @default(false)
 
   @@unique([name, operationId])
 }

@@ -1,4 +1,4 @@
-import { Transaction } from '@prisma/client';
+import { Transaction } from '@/modules/transaction/entities/transaction.entity';
 import Decimal from 'decimal.js';
 import { OrderEntity } from '@/modules/order/entities/order.entity';
 import { STATUS_RULES, DEFAULT_RULE } from '../utils/status-rules';

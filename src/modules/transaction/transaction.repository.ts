@@ -2,7 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
-import { Prisma, Transaction } from '@prisma/client';
+import { Prisma } from '@prisma/client';
+import { Transaction } from './entities/transaction.entity';
 
 @Injectable()
 export class TransactionRepository {
@@ -25,8 +26,8 @@ export class TransactionRepository {
     });
   }
 
-  findAll() {
-    return this.prisma.transaction.findMany();
+  findAll(): Promise<Transaction[]> {
+    return this.prisma.transaction.findMany() as unknown as Promise<Transaction[]>;
   }
 
   groupByPostingNumber() {
@@ -41,7 +42,7 @@ export class TransactionRepository {
   }
 
   findLast(): Promise<Transaction | null> {
-    return this.prisma.transaction.findFirst({ orderBy: { date: 'desc' } });
+    return this.prisma.transaction.findFirst({ orderBy: { date: 'desc' } }) as unknown as Promise<Transaction | null>;
   }
 
   update(id: string, data: UpdateTransactionDto) {
