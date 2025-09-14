@@ -85,6 +85,7 @@ export class FinanceService {
           otherTransactions: {},
           sharedTransactions: {},
           buyoutPercent: 0,
+          margin: 0,
         };
       item.totalCost += unit.costPrice;
       item.totalServices += unit.totalServices;
@@ -127,6 +128,7 @@ export class FinanceService {
       salesCount: 0,
       statusCounts: {} as Record<string, number>,
       buyoutPercent: 0,
+      margin: 0,
     };
 
     monthMap.forEach((skuMap, month) => {
@@ -138,6 +140,7 @@ export class FinanceService {
         salesCount: 0,
         statusCounts: {} as Record<string, number>,
         buyoutPercent: 0,
+        margin: 0,
       };
 
       const otherBySku = otherMap.get(month);
@@ -164,11 +167,27 @@ export class FinanceService {
         item.totalCost = this.round2(item.totalCost);
         item.totalServices = this.round2(item.totalServices);
         item.totalRevenue = this.round2(item.totalRevenue);
+        const otherSum = Object.values(item.otherTransactions).reduce(
+          (sum, val) => sum + val,
+          0,
+        );
+        const sharedSum = Object.values(sharedTx).reduce(
+          (sum, val) => sum + val,
+          0,
+        );
+        item.margin = this.round2(
+          item.totalRevenue -
+            item.totalCost -
+            item.totalServices -
+            sharedSum -
+            otherSum,
+        );
         items.push(item);
 
         totals.totalCost += item.totalCost;
         totals.totalServices += item.totalServices;
         totals.totalRevenue += item.totalRevenue;
+        totals.margin += item.margin;
         totals.salesCount += item.salesCount;
         Object.entries(item.statusCounts).forEach(([status, cnt]) => {
           totals.statusCounts[status] = (totals.statusCounts[status] ?? 0) + cnt;
@@ -179,12 +198,14 @@ export class FinanceService {
       totals.totalCost = this.round2(totals.totalCost);
       totals.totalServices = this.round2(totals.totalServices);
       totals.totalRevenue = this.round2(totals.totalRevenue);
+      totals.margin = this.round2(totals.margin);
 
       months.push({ month, items, totals });
 
       overall.totalCost += totals.totalCost;
       overall.totalServices += totals.totalServices;
       overall.totalRevenue += totals.totalRevenue;
+      overall.margin += totals.margin;
       overall.salesCount += totals.salesCount;
       Object.entries(totals.statusCounts).forEach(([status, cnt]) => {
         overall.statusCounts[status] = (overall.statusCounts[status] ?? 0) + cnt;
@@ -195,6 +216,7 @@ export class FinanceService {
     overall.totalCost = this.round2(overall.totalCost);
     overall.totalServices = this.round2(overall.totalServices);
     overall.totalRevenue = this.round2(overall.totalRevenue);
+    overall.margin = this.round2(overall.margin);
 
     return { months, totals: overall };
   }
