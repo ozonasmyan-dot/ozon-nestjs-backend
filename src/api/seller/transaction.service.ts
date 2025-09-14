@@ -73,13 +73,14 @@ export class TransactionApiService {
   }
 
   private normalize(t: any): TransactionEntity[] {
+    if (ADS_EXCLUDED_OPERATION_TYPES.has(t.operation_type)) {
+      return [];
+    }
+
     const baseDate = dayjs(t.operation_date, "YYYY-MM-DD HH:mm:ss").toDate();
     const results: TransactionEntity[] = [];
 
-    const isAds =
-      Array.isArray(t.services) &&
-      t.services.length &&
-      !ADS_EXCLUDED_OPERATION_TYPES.has(t.operation_type);
+    const isAds = Array.isArray(t.services) && t.services.length;
 
     if (isAds) {
       for (const s of t.services) {

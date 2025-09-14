@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { TransactionRepository } from './transaction.repository';
 import { TransactionApiService } from '@/api/seller/transaction.service';
+import { ADS_EXCLUDED_OPERATION_TYPES } from '@/shared/constants/transaction-types.constants';
 
 @Injectable()
 export class TransactionService {
@@ -26,12 +27,16 @@ export class TransactionService {
       },
     });
 
-    if (!operations.length) {
+    const filtered = operations.filter(
+      (op) => !ADS_EXCLUDED_OPERATION_TYPES.has(op.name),
+    );
+
+    if (!filtered.length) {
       return 0;
     }
 
-    const queries = operations.map((op) => this.repository.create(op));
+    const queries = filtered.map((op) => this.repository.create(op));
     await this.repository.transaction(queries);
-    return operations.length;
+    return filtered.length;
   }
 }
