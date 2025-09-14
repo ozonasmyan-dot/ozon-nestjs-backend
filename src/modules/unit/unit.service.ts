@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { OrderRepository } from '@/modules/order/order.repository';
 import { TransactionRepository } from '@/modules/transaction/transaction.repository';
-import { Transaction, Prisma } from '@prisma/client';
+import { Transaction } from '@prisma/client';
 import { AggregateUnitDto } from './dto/aggregate-unit.dto';
 import { UnitEntity } from './entities/unit.entity';
+import { buildOrderWhere } from './utils/order-filter.utils';
 
 @Injectable()
 export class UnitService {
@@ -35,27 +36,7 @@ export class UnitService {
       transactionTotal: number;
     }[];
   }> {
-    const where: Prisma.OrderWhereInput = {};
-    if (dto.postingNumber) {
-      where.postingNumber = dto.postingNumber;
-    }
-    if (dto.sku) {
-      where.sku = dto.sku;
-    }
-    if (dto.from || dto.to) {
-      const createdAt: Prisma.DateTimeFilter = {};
-      if (dto.from) {
-        const from = new Date(dto.from);
-        from.setHours(0, 0, 0, 0);
-        createdAt.gte = from;
-      }
-      if (dto.to) {
-        const to = new Date(dto.to);
-        to.setHours(23, 59, 59, 999);
-        createdAt.lte = to;
-      }
-      where.createdAt = createdAt;
-    }
+    const where = buildOrderWhere(dto);
 
     const [orders, transactions] = await Promise.all([
       this.orderRepository.findAll(where),
@@ -80,8 +61,12 @@ export class UnitService {
       });
     });
 
-    const filteredItems = dto.status
-      ? items.filter((item) => item.status === dto.status)
+    const statuses = dto.status
+      ?.split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const filteredItems = statuses
+      ? items.filter((item) => statuses.includes(item.status))
       : items;
 
     const totals = filteredItems.reduce(
