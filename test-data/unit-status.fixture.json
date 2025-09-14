@@ -1,0 +1,242 @@
+{
+  "orders": [
+    {
+      "id": "cancel-pvz",
+      "product": "1828048543",
+      "orderId": "O1",
+      "orderNumber": "ON1",
+      "postingNumber": "PN1",
+      "status": "cancelled",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "inProcessAt": "2024-01-02T00:00:00.000Z",
+      "sku": "1828048543",
+      "oldPrice": 1000,
+      "price": 1000,
+      "currencyCode": "RUB",
+      "transactions": [
+        {
+          "id": "t1",
+          "operationId": "op1",
+          "operationType": "operation",
+          "operationTypeName": "Sale",
+          "operationServiceName": "SaleCommission",
+          "date": "2024-01-03T00:00:00.000Z",
+          "type": "operation",
+          "postingNumber": "PN1",
+          "price": -10
+        },
+        {
+          "id": "t2",
+          "operationId": "op2",
+          "operationType": "operation",
+          "operationTypeName": "Return",
+          "operationServiceName": "MarketplaceServiceItemReturnFlowLogistic",
+          "date": "2024-01-04T00:00:00.000Z",
+          "type": "operation",
+          "postingNumber": "PN1",
+          "price": -20
+        }
+      ]
+    },
+    {
+      "id": "instant-cancel",
+      "product": "1828048543",
+      "orderId": "O2",
+      "orderNumber": "ON2",
+      "postingNumber": "PN2",
+      "status": "cancelled",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "inProcessAt": "2024-01-02T00:00:00.000Z",
+      "sku": "1828048543",
+      "oldPrice": 1000,
+      "price": 1000,
+      "currencyCode": "RUB",
+      "transactions": [
+        {
+          "id": "cmfis779400beuyuahz6xdouv",
+          "operationId": "27990457442",
+          "operationType": "MarketplaceRedistributionOfAcquiringOperation",
+          "operationTypeName": "Оплата эквайринга",
+          "operationServiceName": "MarketplaceRedistributionOfAcquiringOperation",
+          "date": "2025-09-13T21:31:41.483Z",
+          "type": "other",
+          "postingNumber": "0124334668-0013",
+          "price": -2.54
+        },
+        {
+          "id": "cmfis779400bfuyuacvgekbjy",
+          "operationId": "27990459160",
+          "operationType": "MarketplaceRedistributionOfAcquiringOperation",
+          "operationTypeName": "Оплата эквайринга",
+          "operationServiceName": "MarketplaceRedistributionOfAcquiringOperation",
+          "date": "2025-09-13T21:31:41.483Z",
+          "type": "other",
+          "postingNumber": "0124334668-0013",
+          "price": 2.54
+        }
+      ]
+    },
+    {
+      "id": "delivered-negative",
+      "product": "1828048543",
+      "orderId": "O3",
+      "orderNumber": "ON3",
+      "postingNumber": "PN3",
+      "status": "delivered",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "inProcessAt": "2024-01-02T00:00:00.000Z",
+      "sku": "1828048543",
+      "oldPrice": 1000,
+      "price": 1000,
+      "currencyCode": "RUB",
+      "transactions": [
+        {
+          "id": "t4",
+          "operationId": "op4",
+          "operationType": "operation",
+          "operationTypeName": "Sale",
+          "operationServiceName": "SaleCommission",
+          "date": "2024-01-03T00:00:00.000Z",
+          "type": "operation",
+          "postingNumber": "PN3",
+          "price": -10
+        }
+      ]
+    },
+    {
+      "id": "delivered-positive",
+      "product": "1828048543",
+      "orderId": "O4",
+      "orderNumber": "ON4",
+      "postingNumber": "PN4",
+      "status": "delivered",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "inProcessAt": "2024-01-02T00:00:00.000Z",
+      "sku": "1828048543",
+      "oldPrice": 1000,
+      "price": 1000,
+      "currencyCode": "RUB",
+      "transactions": [
+        {
+          "id": "t5",
+          "operationId": "op5",
+          "operationType": "operation",
+          "operationTypeName": "Sale",
+          "operationServiceName": "SaleCommission",
+          "date": "2024-01-03T00:00:00.000Z",
+          "type": "operation",
+          "postingNumber": "PN4",
+          "price": 10
+        }
+      ]
+    },
+    {
+      "id": "awaiting-payment",
+      "product": "1828048543",
+      "orderId": "O5",
+      "orderNumber": "ON5",
+      "postingNumber": "PN5",
+      "status": "delivered",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "inProcessAt": "2024-01-02T00:00:00.000Z",
+      "sku": "1828048543",
+      "oldPrice": 1000,
+      "price": 1000,
+      "currencyCode": "RUB",
+      "transactions": [
+        {
+          "id": "t6",
+          "operationId": "op6",
+          "operationType": "operation",
+          "operationTypeName": "Sale",
+          "operationServiceName": "MarketplaceServiceItemLogistics",
+          "date": "2024-01-03T00:00:00.000Z",
+          "type": "operation",
+          "postingNumber": "PN5",
+          "price": -5
+        }
+      ]
+    },
+    {
+      "id": "awaiting-delivery",
+      "product": "1828048543",
+      "orderId": "O6",
+      "orderNumber": "ON6",
+      "postingNumber": "PN6",
+      "status": "awaiting_deliver",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "inProcessAt": "2024-01-02T00:00:00.000Z",
+      "sku": "1828048543",
+      "oldPrice": 1000,
+      "price": 1000,
+      "currencyCode": "RUB",
+      "transactions": [
+        {
+          "id": "t7",
+          "operationId": "op7",
+          "operationType": "operation",
+          "operationTypeName": "Sale",
+          "operationServiceName": "SaleCommission",
+          "date": "2024-01-03T00:00:00.000Z",
+          "type": "operation",
+          "postingNumber": "PN6",
+          "price": -10
+        }
+      ]
+    },
+    {
+      "id": "awaiting-packaging",
+      "product": "1828048543",
+      "orderId": "O7",
+      "orderNumber": "ON7",
+      "postingNumber": "PN7",
+      "status": "awaiting_packaging",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "inProcessAt": "2024-01-02T00:00:00.000Z",
+      "sku": "1828048543",
+      "oldPrice": 1000,
+      "price": 1000,
+      "currencyCode": "RUB",
+      "transactions": [
+        {
+          "id": "t8",
+          "operationId": "op8",
+          "operationType": "operation",
+          "operationTypeName": "Sale",
+          "operationServiceName": "SaleCommission",
+          "date": "2024-01-03T00:00:00.000Z",
+          "type": "operation",
+          "postingNumber": "PN7",
+          "price": -10
+        }
+      ]
+    },
+    {
+      "id": "delivering",
+      "product": "1828048543",
+      "orderId": "O8",
+      "orderNumber": "ON8",
+      "postingNumber": "PN8",
+      "status": "delivering",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "inProcessAt": "2024-01-02T00:00:00.000Z",
+      "sku": "1828048543",
+      "oldPrice": 1000,
+      "price": 1000,
+      "currencyCode": "RUB",
+      "transactions": [
+        {
+          "id": "t9",
+          "operationId": "op9",
+          "operationType": "operation",
+          "operationTypeName": "Sale",
+          "operationServiceName": "SaleCommission",
+          "date": "2024-01-03T00:00:00.000Z",
+          "type": "operation",
+          "postingNumber": "PN8",
+          "price": -10
+        }
+      ]
+    }
+  ]
+}
