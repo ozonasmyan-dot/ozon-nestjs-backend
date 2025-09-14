@@ -1,23 +1,25 @@
 export interface FinanceItem {
   sku: string;
-  costPrice: number;
-  services: number;
-  price: number;
-  count: number;
-  statuses: Record<string, number>;
-  other: Record<string, number>;
-  generalTransactions: Record<string, number>;
+  totalCost: number;
+  totalServices: number;
+  totalRevenue: number;
+  salesCount: number;
+  statusCounts: Record<string, number>;
+  otherTransactions: Record<string, number>;
+  sharedTransactions: Record<string, number>;
+  buyoutPercent: number;
 }
 
 export interface FinanceMonth {
   month: string;
   items: FinanceItem[];
   totals: {
-    costPrice: number;
-    services: number;
-    price: number;
-    count: number;
-    statuses: Record<string, number>;
+    totalCost: number;
+    totalServices: number;
+    totalRevenue: number;
+    salesCount: number;
+    statusCounts: Record<string, number>;
+    buyoutPercent: number;
   };
 }
 
