@@ -3,6 +3,7 @@ import { SellerApiService } from "./seller.service";
 import { GetTransactionsDto } from "./dto/get-transactions.dto";
 import dayjs from "dayjs";
 import { TransactionEntity } from "@/modules/transaction/entities/transaction.entity";
+import { ADS_EXCLUDED_OPERATION_TYPES } from "@/shared/constants/transaction-types.constants";
 
 interface DateRange {
   from: Date;
@@ -75,7 +76,12 @@ export class TransactionApiService {
     const baseDate = dayjs(t.operation_date, "YYYY-MM-DD HH:mm:ss").toDate();
     const results: TransactionEntity[] = [];
 
-    if (Array.isArray(t.services) && t.services.length) {
+    const isAds =
+      Array.isArray(t.services) &&
+      t.services.length &&
+      !ADS_EXCLUDED_OPERATION_TYPES.has(t.operation_type);
+
+    if (isAds) {
       for (const s of t.services) {
         results.push(
           new TransactionEntity({
