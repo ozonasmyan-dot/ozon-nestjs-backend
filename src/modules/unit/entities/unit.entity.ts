@@ -30,7 +30,7 @@ export class UnitEntity extends OrderEntity {
 
   private buildServices(): Service[] {
     return (this.transactions ?? []).map((tx) => ({
-      name: tx.operationServiceName,
+      name: tx.name,
       price: tx.price,
     }));
   }

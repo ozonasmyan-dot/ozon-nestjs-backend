@@ -8,17 +8,14 @@ datasource db {
 }
 
 model Transaction {
-  id                   String   @id @default(cuid())
-  operationId          String
-  operationType        String
-  operationTypeName    String
-  operationServiceName String
-  date                 DateTime
-  type                 String
-  postingNumber        String
-  price                Float
+  id            String   @id @default(cuid())
+  operationId   String
+  name          String
+  date          DateTime
+  postingNumber String
+  price         Float
 
-  @@unique([operationServiceName, postingNumber, type, operationId])
+  @@unique([name, operationId])
 }
 
 model Order {

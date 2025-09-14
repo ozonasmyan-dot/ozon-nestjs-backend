@@ -1,5 +1,5 @@
 import {toDecimalUtils} from '@/shared/utils/to-decimal.utils';
-import {SBS_MAP} from '@/shared/constants/sbs-map';
+import {SBS_MAP} from '@/shared/constants/sbs-map.constants';
 import {EconomyContext} from '../ts/economy-context.interface';
 import {StatusRule} from '../ts/status-rule.type';
 import {CustomStatus} from '../ts/custom-status.enum';
@@ -26,13 +26,14 @@ const STATUS_RULES: Record<OzonStatus, StatusRule> = {
         costPrice: toDecimalUtils(0),
         margin: totalServices,
     }),
-    [OzonStatus.Delivered]: ({
-                                 hasSalesCommission,
-                                 salesCommissionSum,
-                                 priceDecimal,
-                                 totalServices,
-                                 product,
-                             }) => {
+    [OzonStatus.Delivered]: (
+        {
+            hasSalesCommission,
+            salesCommissionSum,
+            priceDecimal,
+            totalServices,
+            product,
+        }) => {
         if (hasSalesCommission) {
             if (salesCommissionSum.isNegative()) {
                 const costPrice = toDecimalUtils(SBS_MAP[product]);

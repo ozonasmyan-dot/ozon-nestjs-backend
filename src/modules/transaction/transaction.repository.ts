@@ -15,10 +15,8 @@ export class TransactionRepository {
   create(data: CreateTransactionDto) {
     return this.prisma.transaction.upsert({
       where: {
-        operationServiceName_postingNumber_type_operationId: {
-          operationServiceName: data.operationServiceName,
-          postingNumber: data.postingNumber,
-          type: data.type,
+        name_operationId: {
+          name: data.name,
           operationId: data.operationId
         },
       },
