@@ -86,6 +86,8 @@ export class FinanceService {
           sharedTransactions: {},
           buyoutPercent: 0,
           margin: 0,
+          marginPercent: 0,
+          profitabilityPercent: 0,
         };
       item.totalCost += unit.costPrice;
       item.totalServices += unit.totalServices;
@@ -129,6 +131,8 @@ export class FinanceService {
       statusCounts: {} as Record<string, number>,
       buyoutPercent: 0,
       margin: 0,
+      marginPercent: 0,
+      profitabilityPercent: 0,
     };
 
     monthMap.forEach((skuMap, month) => {
@@ -141,6 +145,8 @@ export class FinanceService {
         statusCounts: {} as Record<string, number>,
         buyoutPercent: 0,
         margin: 0,
+        marginPercent: 0,
+        profitabilityPercent: 0,
       };
 
       const otherBySku = otherMap.get(month);
@@ -182,6 +188,14 @@ export class FinanceService {
             sharedSum -
             otherSum,
         );
+        item.marginPercent =
+          item.totalRevenue > 0
+            ? this.round2((item.margin / item.totalRevenue) * 100)
+            : 0;
+        item.profitabilityPercent =
+          item.totalCost > 0
+            ? this.round2((item.margin / item.totalCost) * 100)
+            : 0;
         items.push(item);
 
         totals.totalCost += item.totalCost;
@@ -199,6 +213,14 @@ export class FinanceService {
       totals.totalServices = this.round2(totals.totalServices);
       totals.totalRevenue = this.round2(totals.totalRevenue);
       totals.margin = this.round2(totals.margin);
+      totals.marginPercent =
+        totals.totalRevenue > 0
+          ? this.round2((totals.margin / totals.totalRevenue) * 100)
+          : 0;
+      totals.profitabilityPercent =
+        totals.totalCost > 0
+          ? this.round2((totals.margin / totals.totalCost) * 100)
+          : 0;
 
       months.push({ month, items, totals });
 
@@ -217,6 +239,14 @@ export class FinanceService {
     overall.totalServices = this.round2(overall.totalServices);
     overall.totalRevenue = this.round2(overall.totalRevenue);
     overall.margin = this.round2(overall.margin);
+    overall.marginPercent =
+      overall.totalRevenue > 0
+        ? this.round2((overall.margin / overall.totalRevenue) * 100)
+        : 0;
+    overall.profitabilityPercent =
+      overall.totalCost > 0
+        ? this.round2((overall.margin / overall.totalCost) * 100)
+        : 0;
 
     return { months, totals: overall };
   }

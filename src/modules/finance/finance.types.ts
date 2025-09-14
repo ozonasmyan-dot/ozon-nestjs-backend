@@ -9,6 +9,8 @@ export interface FinanceItem {
   sharedTransactions: Record<string, number>;
   buyoutPercent: number;
   margin: number;
+  marginPercent: number;
+  profitabilityPercent: number;
 }
 
 export interface FinanceMonth {
@@ -22,6 +24,8 @@ export interface FinanceMonth {
     statusCounts: Record<string, number>;
     buyoutPercent: number;
     margin: number;
+    marginPercent: number;
+    profitabilityPercent: number;
   };
 }
 
