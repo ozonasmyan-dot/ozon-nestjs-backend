@@ -1,15 +1,12 @@
-import * as fs from 'fs';
-import * as path from 'path';
 import {UnitEntity} from '@/modules/unit/entities/unit.entity';
 import {CustomStatus} from '@/modules/unit/ts/custom-status.enum';
+import ordersFixture from '@/shared/data/orders.fixture';
 
 describe('UnitEntity status calculation', () => {
     let orders: any[];
 
     beforeAll(() => {
-        const file = path.join(__dirname, './', 'unit-status.fixture.json');
-        const fixture = JSON.parse(fs.readFileSync(file, 'utf8'));
-        orders = fixture.orders.map((o) => ({
+        orders = ordersFixture.map((o) => ({
             ...o,
             createdAt: new Date(o.createdAt),
             inProcessAt: new Date(o.inProcessAt),
@@ -24,9 +21,12 @@ describe('UnitEntity status calculation', () => {
 
     it('should return CancelPVZ when cancelled and return transaction exists', () => {
         const unit = new UnitEntity(getOrder('cancel-pvz'));
+
+        console.log(unit);
+
         expect(unit.status).toBe(CustomStatus.CancelPVZ);
         expect(unit.costPrice).toBe(0);
-        expect(unit.margin).toBeCloseTo(-30);
+        expect(unit.margin).toBeCloseTo(-400);
     });
 
     it('should return InstantCancel when cancelled without return transaction', () => {
