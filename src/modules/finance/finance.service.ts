@@ -4,29 +4,11 @@ import { TransactionRepository } from '@/modules/transaction/transaction.reposit
 import { Transaction } from '@prisma/client';
 import dayjs from 'dayjs';
 import { UnitEntity } from '@/modules/unit/entities/unit.entity';
-
-interface FinanceItem {
-  sku: string;
-  costPrice: number;
-  services: number;
-  price: number;
-  count: number;
-  statuses: Record<string, number>;
-  other: Record<string, number>;
-  generalTransactions: Record<string, number>;
-}
-
-interface FinanceMonth {
-  month: string;
-  items: FinanceItem[];
-  totals: {
-    costPrice: number;
-    services: number;
-    price: number;
-    count: number;
-    statuses: Record<string, number>;
-  };
-}
+import {
+  FinanceAggregate,
+  FinanceItem,
+  FinanceMonth,
+} from './finance.types';
 
 @Injectable()
 export class FinanceService {
@@ -49,7 +31,7 @@ export class FinanceService {
     }, new Map<string, Transaction[]>());
   }
 
-  async aggregate(): Promise<{ months: FinanceMonth[]; totals: FinanceMonth['totals'] }> {
+  async aggregate(): Promise<FinanceAggregate> {
     const [orders, transactions] = await Promise.all([
       this.orderRepository.findAll(),
       this.transactionRepository.findAll(),
