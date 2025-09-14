@@ -5,7 +5,8 @@ export class TransactionEntity implements Transaction {
   operationId: string;
   name: string;
   date: Date;
-  postingNumber: string;
+  postingNumber: string | null;
+  sku: string | null;
   price: number;
 
   constructor(partial: Partial<Transaction>) {

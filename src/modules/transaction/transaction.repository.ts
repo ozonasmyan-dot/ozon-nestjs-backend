@@ -13,15 +13,24 @@ export class TransactionRepository {
   }
 
   create(data: CreateTransactionDto) {
+    const payload = {
+      ...data,
+      postingNumber: data.postingNumber ?? null,
+      sku:
+        data.sku === undefined || data.sku === null
+          ? null
+          : String(data.sku),
+    } as const;
+
     return this.prisma.transaction.upsert({
       where: {
         name_operationId: {
           name: data.name,
-          operationId: data.operationId
+          operationId: data.operationId,
         },
       },
-      create: data,
-      update: data,
+      create: payload,
+      update: payload,
     });
   }
 
