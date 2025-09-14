@@ -4,4 +4,5 @@ export class CreateTransactionDto {
   date: Date;
   postingNumber: string;
   price: number;
+  sku: string;
 }
