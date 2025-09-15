@@ -1,10 +1,11 @@
-import { Injectable } from '@nestjs/common';
-import { OrderRepository } from '@/modules/order/order.repository';
-import { TransactionRepository } from '@/modules/transaction/transaction.repository';
-import { Transaction } from '@prisma/client';
-import { AggregateUnitDto } from './dto/aggregate-unit.dto';
-import { UnitEntity } from './entities/unit.entity';
-import { buildOrderWhere } from './utils/order-filter.utils';
+import { Injectable } from "@nestjs/common";
+import { OrderRepository } from "@/modules/order/order.repository";
+import { TransactionRepository } from "@/modules/transaction/transaction.repository";
+import { Transaction } from "@prisma/client";
+import { AggregateUnitDto } from "./dto/aggregate-unit.dto";
+import { UnitEntity } from "./entities/unit.entity";
+import { buildOrderWhere } from "./utils/order-filter.utils";
+import { CustomStatus } from "./ts/custom-status.enum";
 
 @Injectable()
 export class UnitService {
@@ -33,6 +34,7 @@ export class UnitService {
       statuses: Record<string, number>;
       margin: number;
       price: number;
+      costPrice: number;
       transactionTotal: number;
     }[];
   }> {
@@ -62,7 +64,7 @@ export class UnitService {
     });
 
     const statuses = dto.status
-      ?.split(',')
+      ?.split(",")
       .map((s) => s.trim())
       .filter(Boolean);
     const filteredItems = statuses
@@ -72,7 +74,10 @@ export class UnitService {
     const totals = filteredItems.reduce(
       (acc, item) => {
         acc.margin += item.margin;
-        acc.price += item.price;
+        if (item.status === CustomStatus.Delivered) {
+          acc.price += item.price;
+          acc.costPrice += item.costPrice;
+        }
         acc.transactionTotal += item.transactionTotal;
         acc.statuses[item.status] = (acc.statuses[item.status] ?? 0) + 1;
         return acc;
@@ -81,6 +86,7 @@ export class UnitService {
         statuses: {} as Record<string, number>,
         margin: 0,
         price: 0,
+        costPrice: 0,
         transactionTotal: 0,
       },
     );
