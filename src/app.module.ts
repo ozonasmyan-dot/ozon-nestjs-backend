@@ -6,7 +6,6 @@ import {PrismaModule} from "./prisma/prisma.module";
 import {TransactionModule} from "./modules/transaction/transaction.module";
 import {OrderModule} from "./modules/order/order.module";
 import { UnitModule } from './modules/unit/unit.module';
-import { FinanceModule } from './modules/finance/finance.module';
 import { PerformanceApiModule } from "./api/performance/performance.module";
 import { SellerApiModule } from "./api/seller/seller.module";
 import ozonConfig from "@/config/ozon.config";
@@ -22,7 +21,6 @@ import ozonConfig from "@/config/ozon.config";
         TransactionModule,
         OrderModule,
         UnitModule,
-        FinanceModule,
         PerformanceApiModule,
         SellerApiModule,
     ],
