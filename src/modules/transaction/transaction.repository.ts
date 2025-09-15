@@ -38,27 +38,8 @@ export class TransactionRepository {
     return this.prisma.transaction.findMany();
   }
 
-  groupByPostingNumber() {
-    return this.prisma.transaction.groupBy({
-      by: ['postingNumber'],
-      _sum: { price: true },
-    });
-  }
-
-  findById(id: string) {
-    return this.prisma.transaction.findUnique({ where: { id } });
-  }
-
   findLast(): Promise<Transaction | null> {
     return this.prisma.transaction.findFirst({ orderBy: { date: 'desc' } });
-  }
-
-  update(id: string, data: UpdateTransactionDto) {
-    return this.prisma.transaction.update({ where: { id }, data });
-  }
-
-  remove(id: string) {
-    return this.prisma.transaction.delete({ where: { id } });
   }
 
   transaction<T>(operations: Prisma.PrismaPromise<T>[]) {
