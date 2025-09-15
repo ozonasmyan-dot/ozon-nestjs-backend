@@ -1,4 +1,4 @@
-import Decimal from 'decimal.js';
+import Decimal from '@/shared/utils/decimal';
 import { Service } from './service.interface';
 import { OzonStatus } from './ozon-status.enum';
 
