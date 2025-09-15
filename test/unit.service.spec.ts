@@ -1,12 +1,14 @@
 import { UnitService } from "@/modules/unit/unit.service";
 import { OrderRepository } from "@/modules/order/order.repository";
 import { TransactionRepository } from "@/modules/transaction/transaction.repository";
+import { UnitFactory } from "@/modules/unit/unit.factory";
 import ordersFixture from "@/shared/data/orders.fixture";
 
 describe("UnitService", () => {
   let service: UnitService;
   let orders: any[];
   let transactions: any[];
+  let unitFactory: UnitFactory;
 
   beforeAll(() => {
     orders = ordersFixture.map((o) => ({
@@ -31,7 +33,12 @@ describe("UnitService", () => {
           ),
         ),
     } as unknown as TransactionRepository;
-    service = new UnitService(orderRepository, transactionRepository);
+    unitFactory = new UnitFactory();
+    service = new UnitService(
+      orderRepository,
+      transactionRepository,
+      unitFactory,
+    );
   });
 
   it("sums price and costPrice only for delivered items", async () => {
@@ -48,5 +55,11 @@ describe("UnitService", () => {
     );
     expect(lines.length).toBe(orders.length + 1);
     expect(csv).toContain("t2:-400");
+  });
+
+  it("uses UnitFactory to create units", async () => {
+    const spy = jest.spyOn(unitFactory, "createUnit");
+    await service.aggregate({});
+    expect(spy).toHaveBeenCalledTimes(orders.length);
   });
 });

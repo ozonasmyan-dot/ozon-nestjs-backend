@@ -6,12 +6,14 @@ import { AggregateUnitDto } from "./dto/aggregate-unit.dto";
 import { UnitEntity } from "./entities/unit.entity";
 import { buildOrderWhere } from "./utils/order-filter.utils";
 import { CustomStatus } from "./ts/custom-status.enum";
+import { UnitFactory } from "./unit.factory";
 
 @Injectable()
 export class UnitService {
   constructor(
     private readonly orderRepository: OrderRepository,
     private readonly transactionRepository: TransactionRepository,
+    private readonly unitFactory: UnitFactory,
   ) {}
 
   async aggregate(dto: AggregateUnitDto): Promise<{
@@ -45,15 +47,7 @@ export class UnitService {
       const orderTransactions = numbers.flatMap(
         (num) => byNumber.get(num) ?? [],
       );
-      const uniqueTxs = [
-        ...new Map(orderTransactions.map((t) => [t.id, t])).values(),
-      ];
-      const transactionTotal = uniqueTxs.reduce((sum, t) => sum + t.price, 0);
-      return new UnitEntity({
-        ...order,
-        transactionTotal,
-        transactions: uniqueTxs,
-      });
+      return this.unitFactory.createUnit(order, orderTransactions);
     });
 
     const statuses = dto.status

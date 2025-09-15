@@ -4,7 +4,7 @@ import { TransactionRepository } from '@/modules/transaction/transaction.reposit
 import { groupTransactionsByPostingNumber } from '@/shared/utils/transaction.utils';
 import dayjs from 'dayjs';
 import Decimal from '@/shared/utils/decimal';
-import { UnitEntity } from '@/modules/unit/entities/unit.entity';
+import { UnitFactory } from '@/modules/unit/unit.factory';
 import {
   FinanceAggregate,
   FinanceItem,
@@ -17,6 +17,7 @@ export class FinanceService {
   constructor(
     private readonly orderRepository: OrderRepository,
     private readonly transactionRepository: TransactionRepository,
+    private readonly unitFactory: UnitFactory,
   ) {}
 
   private round2(value: Decimal.Value): number {
@@ -52,15 +53,7 @@ export class FinanceService {
     orders.forEach((order) => {
       const numbers = [order.postingNumber, order.orderNumber];
       const txs = numbers.flatMap((n) => byPosting.get(n) ?? []);
-      const uniqueTxs = [...new Map(txs.map((t) => [t.id, t])).values()];
-      const transactionTotal = uniqueTxs
-        .reduce((sum, t) => sum.plus(t.price), new Decimal(0))
-        .toNumber();
-      const unit = new UnitEntity({
-        ...order,
-        transactionTotal,
-        transactions: uniqueTxs,
-      });
+      const unit = this.unitFactory.createUnit(order, txs);
 
       const month = dayjs(order.createdAt).format('MM-YYYY');
       const skuMap = monthMap.get(month) ?? new Map<string, FinanceItem>();
