@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { OrderRepository } from "@/modules/order/order.repository";
 import { TransactionRepository } from "@/modules/transaction/transaction.repository";
-import { Transaction } from "@prisma/client";
+import { groupTransactionsByPostingNumber } from "@/shared/utils/transaction.utils";
 import { AggregateUnitDto } from "./dto/aggregate-unit.dto";
 import { UnitEntity } from "./entities/unit.entity";
 import { buildOrderWhere } from "./utils/order-filter.utils";
@@ -13,20 +13,6 @@ export class UnitService {
     private readonly orderRepository: OrderRepository,
     private readonly transactionRepository: TransactionRepository,
   ) {}
-
-  private groupTransactionsByPostingNumber(
-    transactions: Transaction[],
-  ): Map<string, Transaction[]> {
-    return transactions.reduce((map, tx) => {
-      if (!tx.postingNumber) {
-        return map;
-      }
-      const list = map.get(tx.postingNumber) ?? [];
-      list.push(tx);
-      map.set(tx.postingNumber, list);
-      return map;
-    }, new Map<string, Transaction[]>());
-  }
 
   async aggregate(dto: AggregateUnitDto): Promise<{
     items: UnitEntity[];
@@ -52,7 +38,7 @@ export class UnitService {
       postingNumbers,
     );
 
-    const byNumber = this.groupTransactionsByPostingNumber(transactions);
+    const byNumber = groupTransactionsByPostingNumber(transactions);
 
     const items = orders.map((order) => {
       const numbers = [order.postingNumber, order.orderNumber];

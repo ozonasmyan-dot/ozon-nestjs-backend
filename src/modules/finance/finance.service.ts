@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { OrderRepository } from '@/modules/order/order.repository';
 import { TransactionRepository } from '@/modules/transaction/transaction.repository';
-import { Transaction } from '@prisma/client';
+import { groupTransactionsByPostingNumber } from '@/shared/utils/transaction.utils';
 import dayjs from 'dayjs';
 import Decimal from '@/shared/utils/decimal';
 import { UnitEntity } from '@/modules/unit/entities/unit.entity';
@@ -35,27 +35,13 @@ export class FinanceService {
     return this.round2(delivered.div(denom).times(100));
   }
 
-  private groupTransactionsByPostingNumber(
-    transactions: Transaction[],
-  ): Map<string, Transaction[]> {
-    return transactions.reduce((map, tx) => {
-      if (!tx.postingNumber) {
-        return map;
-      }
-      const list = map.get(tx.postingNumber) ?? [];
-      list.push(tx);
-      map.set(tx.postingNumber, list);
-      return map;
-    }, new Map<string, Transaction[]>());
-  }
-
   async aggregate(): Promise<FinanceAggregate> {
     const [orders, transactions] = await Promise.all([
       this.orderRepository.findAll(),
       this.transactionRepository.findAll(),
     ]);
 
-    const byPosting = this.groupTransactionsByPostingNumber(transactions);
+    const byPosting = groupTransactionsByPostingNumber(transactions);
 
     const monthMap = new Map<string, Map<string, FinanceItem>>();
     const monthCounts = new Map<string, number>();
