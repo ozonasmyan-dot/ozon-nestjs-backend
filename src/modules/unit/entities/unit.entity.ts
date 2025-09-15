@@ -1,5 +1,5 @@
 import { Transaction } from '@prisma/client';
-import Decimal from 'decimal.js';
+import Decimal from '@/shared/utils/decimal';
 import { OrderEntity } from '@/modules/order/entities/order.entity';
 import { STATUS_RULES, DEFAULT_RULE } from '../utils/status-rules';
 import { EconomyContext } from '../ts/economy-context.interface';
