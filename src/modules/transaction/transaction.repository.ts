@@ -38,6 +38,12 @@ export class TransactionRepository {
     return this.prisma.transaction.findMany();
   }
 
+  findByPostingNumbers(postingNumbers: string[]) {
+    return this.prisma.transaction.findMany({
+      where: { postingNumber: { in: postingNumbers } },
+    });
+  }
+
   findLast(): Promise<Transaction | null> {
     return this.prisma.transaction.findFirst({ orderBy: { date: 'desc' } });
   }
