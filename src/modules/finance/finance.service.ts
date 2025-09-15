@@ -5,6 +5,7 @@ import { Transaction } from '@prisma/client';
 import dayjs from 'dayjs';
 import Decimal from '@/shared/utils/decimal';
 import { UnitEntity } from '@/modules/unit/entities/unit.entity';
+import { CustomStatus } from '@/modules/unit/ts/custom-status.enum';
 import {
   FinanceAggregate,
   FinanceItem,
@@ -93,15 +94,17 @@ export class FinanceService {
           marginPercent: 0,
           profitabilityPercent: 0,
         };
-      item.totalCost = toDecimalUtils(item.totalCost)
-        .plus(unit.costPrice)
-        .toNumber();
       item.totalServices = toDecimalUtils(item.totalServices)
         .plus(toDecimalUtils(unit.totalServices).abs())
         .toNumber();
-      item.totalRevenue = toDecimalUtils(item.totalRevenue)
-        .plus(unit.price)
-        .toNumber();
+      if (unit.status === CustomStatus.Delivered) {
+        item.totalCost = toDecimalUtils(item.totalCost)
+          .plus(unit.costPrice)
+          .toNumber();
+        item.totalRevenue = toDecimalUtils(item.totalRevenue)
+          .plus(unit.price)
+          .toNumber();
+      }
       item.salesCount += 1;
       item.statusCounts[unit.status] = (item.statusCounts[unit.status] ?? 0) + 1;
       skuMap.set(order.sku, item);
