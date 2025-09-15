@@ -93,4 +93,31 @@ export class UnitService {
 
     return { items: filteredItems, totals: [totals] };
   }
+
+  async aggregateCsv(dto: AggregateUnitDto): Promise<string> {
+    const { items } = await this.aggregate(dto);
+    const header = [
+      "orderNumber",
+      "postingNumber",
+      "sku",
+      "status",
+      "price",
+      "costPrice",
+      "margin",
+      "transactionTotal",
+    ];
+    const rows = items.map((item) =>
+      [
+        item.orderNumber,
+        item.postingNumber,
+        item.sku,
+        item.status,
+        item.price,
+        item.costPrice,
+        item.margin,
+        item.transactionTotal,
+      ].join(","),
+    );
+    return [header.join(","), ...rows].join("\n");
+  }
 }
