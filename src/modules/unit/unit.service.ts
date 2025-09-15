@@ -32,6 +32,7 @@ export class UnitService {
     totals: {
       statuses: Record<string, number>;
       margin: number;
+      costPrice: number;
       price: number;
       transactionTotal: number;
     }[];
@@ -72,6 +73,7 @@ export class UnitService {
     const totals = filteredItems.reduce(
       (acc, item) => {
         acc.margin += item.margin;
+        acc.costPrice += item.costPrice;
         acc.price += item.price;
         acc.transactionTotal += item.transactionTotal;
         acc.statuses[item.status] = (acc.statuses[item.status] ?? 0) + 1;
@@ -81,6 +83,7 @@ export class UnitService {
         statuses: {} as Record<string, number>,
         margin: 0,
         price: 0,
+        costPrice: 0,
         transactionTotal: 0,
       },
     );

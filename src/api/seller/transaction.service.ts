@@ -91,6 +91,7 @@ export class TransactionApiService {
             date: baseDate,
             postingNumber: t.posting?.posting_number,
             price: Number(s.price ?? 0),
+            sku: t.items[0]?.sku ?? ''
           })
         );
       }
@@ -102,6 +103,7 @@ export class TransactionApiService {
           date: baseDate,
           postingNumber: t.posting?.posting_number,
           price: Number(t.amount ?? 0),
+          sku: t.items[0]?.sku ?? ''
         })
       );
     }
@@ -115,6 +117,7 @@ export class TransactionApiService {
           date: baseDate,
           postingNumber: t.posting?.posting_number ?? "",
           price: saleCommission,
+          sku: t.items[0]?.sku ?? ''
         })
       );
     }

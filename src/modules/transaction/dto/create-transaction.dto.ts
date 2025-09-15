@@ -3,5 +3,6 @@ export class CreateTransactionDto {
   name: string;
   date: Date;
   postingNumber: string;
+  sku: string | number;
   price: number;
 }
