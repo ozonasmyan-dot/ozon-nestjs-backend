@@ -12,8 +12,8 @@ model Transaction {
   operationId   String
   name          String
   date          DateTime
-  postingNumber String?
-  sku           String?
+  postingNumber String
+  sku           String
   price         Float
 
   @@unique([name, operationId])
