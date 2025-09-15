@@ -23,7 +23,13 @@ describe("UnitService", () => {
       findAll: jest.fn().mockResolvedValue(orders),
     } as unknown as OrderRepository;
     const transactionRepository = {
-      findAll: jest.fn().mockResolvedValue(transactions),
+      findByPostingNumbers: jest
+        .fn()
+        .mockImplementation((numbers: string[]) =>
+          Promise.resolve(
+            transactions.filter((t) => numbers.includes(t.postingNumber)),
+          ),
+        ),
     } as unknown as TransactionRepository;
     service = new UnitService(orderRepository, transactionRepository);
   });
@@ -38,8 +44,9 @@ describe("UnitService", () => {
     const csv = await service.aggregateCsv({});
     const lines = csv.trim().split("\n");
     expect(lines[0]).toBe(
-      "orderNumber,postingNumber,sku,status,price,costPrice,margin,transactionTotal",
+      "orderNumber,postingNumber,sku,status,price,costPrice,margin,transactionTotal,transactions",
     );
     expect(lines.length).toBe(orders.length + 1);
+    expect(csv).toContain("t2:-400");
   });
 });

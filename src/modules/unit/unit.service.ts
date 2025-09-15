@@ -40,10 +40,17 @@ export class UnitService {
   }> {
     const where = buildOrderWhere(dto);
 
-    const [orders, transactions] = await Promise.all([
-      this.orderRepository.findAll(where),
-      this.transactionRepository.findAll(),
-    ]);
+    const orders = await this.orderRepository.findAll(where);
+    const postingNumbers = Array.from(
+      new Set(
+        orders
+          .flatMap((o) => [o.postingNumber, o.orderNumber])
+          .filter((n): n is string => Boolean(n)),
+      ),
+    );
+    const transactions = await this.transactionRepository.findByPostingNumbers(
+      postingNumbers,
+    );
 
     const byNumber = this.groupTransactionsByPostingNumber(transactions);
 
@@ -105,9 +112,13 @@ export class UnitService {
       "costPrice",
       "margin",
       "transactionTotal",
+      "transactions",
     ];
-    const rows = items.map((item) =>
-      [
+    const rows = items.map((item) => {
+      const txString = item.transactions
+        .map((t) => `${t.id}:${t.price}`)
+        .join("|");
+      return [
         item.orderNumber,
         item.postingNumber,
         item.sku,
@@ -116,8 +127,9 @@ export class UnitService {
         item.costPrice,
         item.margin,
         item.transactionTotal,
-      ].join(","),
-    );
+        `"${txString}"`,
+      ].join(",");
+    });
     return [header.join(","), ...rows].join("\n");
   }
 }
