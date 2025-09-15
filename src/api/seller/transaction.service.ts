@@ -79,6 +79,7 @@ export class TransactionApiService {
 
     const baseDate = dayjs(t.operation_date, "YYYY-MM-DD HH:mm:ss").toDate();
     const results: TransactionEntity[] = [];
+    const sku = String(t.items?.[0]?.sku ?? "");
 
     const isAds = Array.isArray(t.services) && t.services.length;
 
@@ -91,6 +92,7 @@ export class TransactionApiService {
             date: baseDate,
             postingNumber: t.posting?.posting_number,
             price: Number(s.price ?? 0),
+            sku,
           })
         );
       }
@@ -102,6 +104,7 @@ export class TransactionApiService {
           date: baseDate,
           postingNumber: t.posting?.posting_number,
           price: Number(t.amount ?? 0),
+          sku,
         })
       );
     }
@@ -115,6 +118,7 @@ export class TransactionApiService {
           date: baseDate,
           postingNumber: t.posting?.posting_number ?? "",
           price: saleCommission,
+          sku,
         })
       );
     }

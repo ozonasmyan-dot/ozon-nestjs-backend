@@ -8,6 +8,7 @@ export class TransactionEntity implements Transaction {
   postingNumber: string | null;
   sku: string | null;
   price: number;
+  sku: string;
 
   constructor(partial: Partial<Transaction>) {
     Object.assign(this, partial);

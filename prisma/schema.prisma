@@ -15,6 +15,7 @@ model Transaction {
   postingNumber String?
   sku           String?
   price         Float
+  sku           String   @default("")
 
   @@unique([name, operationId])
 }

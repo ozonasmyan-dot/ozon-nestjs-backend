@@ -5,4 +5,5 @@ export class CreateTransactionDto {
   postingNumber?: string;
   sku?: string | number;
   price: number;
+  sku: string;
 }
