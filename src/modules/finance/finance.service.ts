@@ -11,6 +11,7 @@ import {
   FinanceMonth,
 } from './finance.types';
 import { toDecimalUtils } from '@/shared/utils/to-decimal.utils';
+import { FinanceMetricsService } from './finance-metrics.service';
 
 @Injectable()
 export class FinanceService {
@@ -18,81 +19,48 @@ export class FinanceService {
     private readonly orderRepository: OrderRepository,
     private readonly transactionRepository: TransactionRepository,
     private readonly unitFactory: UnitFactory,
+    private readonly metricsService: FinanceMetricsService,
   ) {}
-
   private round2(value: Decimal.Value): number {
     return new Decimal(value).toDecimalPlaces(2).toNumber();
   }
 
-  private computeBuyout(statusCounts: Record<string, number>): number {
-    const delivered = toDecimalUtils(statusCounts['Доставлен']);
-    const cancelPvz = toDecimalUtils(statusCounts['Отмена ПВЗ']);
-    const returned = toDecimalUtils(statusCounts['Возврат']);
-    const instantCancel = toDecimalUtils(statusCounts['Моментальная отмена']);
-    const denom = delivered.plus(cancelPvz).plus(returned).plus(instantCancel);
-    if (denom.isZero()) {
-      return 0;
-    }
-    return this.round2(delivered.div(denom).times(100));
-  }
-
-  async aggregate(): Promise<FinanceAggregate> {
+  private async loadOrdersAndTransactions() {
     const [orders, transactions] = await Promise.all([
       this.orderRepository.findAll(),
       this.transactionRepository.findAll(),
     ]);
+    return { orders, transactions };
+  }
 
-    const byPosting = groupTransactionsByPostingNumber(transactions);
+  private buildFinanceItem(order: any, txs: any[]): FinanceItem {
+    const unit = this.unitFactory.createUnit(order, txs);
+    return {
+      sku: order.sku,
+      totalCost: toDecimalUtils(unit.costPrice).toNumber(),
+      totalServices: toDecimalUtils(unit.totalServices).abs().toNumber(),
+      totalRevenue: toDecimalUtils(unit.price).toNumber(),
+      salesCount: 1,
+      statusCounts: { [unit.status]: 1 },
+      otherTransactions: {},
+      sharedTransactions: {},
+      buyoutPercent: 0,
+      margin: 0,
+      marginPercent: 0,
+      profitabilityPercent: 0,
+    };
+  }
 
-    const monthMap = new Map<string, Map<string, FinanceItem>>();
-    const monthCounts = new Map<string, number>();
-    const otherMap = new Map<string, Map<string, Record<string, number>>>();
+  private buildTransactionMaps(transactions: any[]) {
+    const otherMap = new Map<
+      string,
+      Map<string, Record<string, number>>
+    >();
     const generalMap = new Map<string, Record<string, number>>();
 
-    // build items from orders
-    orders.forEach((order) => {
-      const numbers = [order.postingNumber, order.orderNumber];
-      const txs = numbers.flatMap((n) => byPosting.get(n) ?? []);
-      const unit = this.unitFactory.createUnit(order, txs);
-
-      const month = dayjs(order.createdAt).format('MM-YYYY');
-      const skuMap = monthMap.get(month) ?? new Map<string, FinanceItem>();
-      const item =
-        skuMap.get(order.sku) ?? {
-          sku: order.sku,
-          totalCost: 0,
-          totalServices: 0,
-          totalRevenue: 0,
-          salesCount: 0,
-          statusCounts: {},
-          otherTransactions: {},
-          sharedTransactions: {},
-          buyoutPercent: 0,
-          margin: 0,
-          marginPercent: 0,
-          profitabilityPercent: 0,
-        };
-      item.totalCost = toDecimalUtils(item.totalCost)
-        .plus(unit.costPrice)
-        .toNumber();
-      item.totalServices = toDecimalUtils(item.totalServices)
-        .plus(toDecimalUtils(unit.totalServices).abs())
-        .toNumber();
-      item.totalRevenue = toDecimalUtils(item.totalRevenue)
-        .plus(unit.price)
-        .toNumber();
-      item.salesCount += 1;
-      item.statusCounts[unit.status] = (item.statusCounts[unit.status] ?? 0) + 1;
-      skuMap.set(order.sku, item);
-      monthMap.set(month, skuMap);
-      monthCounts.set(month, (monthCounts.get(month) ?? 0) + 1);
-    });
-
-    // other transactions (with sku but no postingNumber)
-    transactions
-      .filter((tx) => tx.sku && !tx.postingNumber)
-      .forEach((tx) => {
-        const month = dayjs(tx.date).format('MM-YYYY');
+    transactions.forEach((tx) => {
+      const month = dayjs(tx.date).format('MM-YYYY');
+      if (tx.sku && !tx.postingNumber) {
         const sku = tx.sku as string;
         const bySku = otherMap.get(month) ?? new Map<string, Record<string, number>>();
         const nameMap = bySku.get(sku) ?? {};
@@ -101,19 +69,91 @@ export class FinanceService {
           .toNumber();
         bySku.set(sku, nameMap);
         otherMap.set(month, bySku);
-      });
-
-    // general transactions (without sku)
-    transactions
-      .filter((tx) => !tx.sku)
-      .forEach((tx) => {
-        const month = dayjs(tx.date).format('MM-YYYY');
+      } else if (!tx.sku) {
         const nameMap = generalMap.get(month) ?? {};
         nameMap[tx.name] = toDecimalUtils(nameMap[tx.name])
           .plus(toDecimalUtils(tx.price).abs())
           .toNumber();
         generalMap.set(month, nameMap);
+      }
+    });
+
+    return { otherMap, generalMap };
+  }
+
+  private applyTransactionMaps(
+    monthMap: Map<string, Map<string, FinanceItem>>,
+    otherMap: Map<string, Map<string, Record<string, number>>>,
+    generalMap: Map<string, Record<string, number>>,
+    monthCounts: Map<string, number>,
+  ) {
+    monthMap.forEach((skuMap, month) => {
+      const otherBySku = otherMap.get(month);
+      const generalByName = generalMap.get(month) ?? {};
+      const totalCount = monthCounts.get(month) ?? 0;
+
+      skuMap.forEach((item, sku) => {
+        if (otherBySku && otherBySku.has(sku)) {
+          item.otherTransactions = Object.fromEntries(
+            Object.entries(otherBySku.get(sku)!).map(([name, sum]) => [
+              name,
+              this.round2(toDecimalUtils(sum).abs()),
+            ]),
+          );
+        }
+        const sharedTx: Record<string, number> = {};
+        if (totalCount > 0) {
+          Object.entries(generalByName).forEach(([name, sum]) => {
+            sharedTx[name] = this.round2(
+              toDecimalUtils(sum).abs().div(totalCount),
+            );
+          });
+        }
+        item.sharedTransactions = sharedTx;
       });
+    });
+  }
+
+  async aggregate(): Promise<FinanceAggregate> {
+    const { orders, transactions } = await this.loadOrdersAndTransactions();
+
+    const byPosting = groupTransactionsByPostingNumber(transactions);
+
+    const monthMap = new Map<string, Map<string, FinanceItem>>();
+    const monthCounts = new Map<string, number>();
+
+    // build items from orders
+    orders.forEach((order) => {
+      const numbers = [order.postingNumber, order.orderNumber];
+      const txs = numbers.flatMap((n) => byPosting.get(n) ?? []);
+      const month = dayjs(order.createdAt).format('MM-YYYY');
+      const skuMap = monthMap.get(month) ?? new Map<string, FinanceItem>();
+      const existing = skuMap.get(order.sku);
+      const item = this.buildFinanceItem(order, txs);
+      if (existing) {
+        existing.totalCost = toDecimalUtils(existing.totalCost)
+          .plus(item.totalCost)
+          .toNumber();
+        existing.totalServices = toDecimalUtils(existing.totalServices)
+          .plus(item.totalServices)
+          .toNumber();
+        existing.totalRevenue = toDecimalUtils(existing.totalRevenue)
+          .plus(item.totalRevenue)
+          .toNumber();
+        existing.salesCount += item.salesCount;
+        Object.entries(item.statusCounts).forEach(([status, cnt]) => {
+          existing.statusCounts[status] =
+            (existing.statusCounts[status] ?? 0) + cnt;
+        });
+      } else {
+        skuMap.set(order.sku, item);
+      }
+      monthMap.set(month, skuMap);
+      monthCounts.set(month, (monthCounts.get(month) ?? 0) + 1);
+    });
+
+    const { otherMap, generalMap } = this.buildTransactionMaps(transactions);
+    this.applyTransactionMaps(monthMap, otherMap, generalMap, monthCounts);
 
     const months: FinanceMonth[] = [];
     const overall = {
@@ -142,29 +182,10 @@ export class FinanceService {
         profitabilityPercent: 0,
       };
 
-      const otherBySku = otherMap.get(month);
-      const generalByName = generalMap.get(month) ?? {};
-      const totalCount = monthCounts.get(month) ?? 0;
-
-      skuMap.forEach((item, sku) => {
-        if (otherBySku && otherBySku.has(sku)) {
-          item.otherTransactions = Object.fromEntries(
-            Object.entries(otherBySku.get(sku)!).map(([name, sum]) => [
-              name,
-              this.round2(toDecimalUtils(sum).abs()),
-            ]),
-          );
-        }
-        const sharedTx: Record<string, number> = {};
-        if (totalCount > 0) {
-          Object.entries(generalByName).forEach(([name, sum]) => {
-            sharedTx[name] = this.round2(
-              toDecimalUtils(sum).abs().div(totalCount),
-            );
-          });
-        }
-        item.sharedTransactions = sharedTx;
-        item.buyoutPercent = this.computeBuyout(item.statusCounts);
+      skuMap.forEach((item) => {
+        item.buyoutPercent = this.metricsService.calculateBuyout(
+          item.statusCounts,
+        );
         item.totalCost = this.round2(item.totalCost);
         item.totalServices = this.round2(item.totalServices);
         item.totalRevenue = this.round2(item.totalRevenue);
@@ -172,26 +193,26 @@ export class FinanceService {
           (sum, val) => sum.plus(val),
           new Decimal(0),
         );
-        const sharedSum = Object.values(sharedTx).reduce(
+        const sharedSum = Object.values(item.sharedTransactions).reduce(
           (sum, val) => sum.plus(val),
           new Decimal(0),
         );
-        item.margin = this.round2(
-          toDecimalUtils(item.totalRevenue)
-            .minus(item.totalCost)
-            .minus(item.totalServices)
-            .minus(sharedSum)
-            .minus(otherSum),
+        item.margin = this.metricsService.calculateMargin(
+          item.totalRevenue,
+          item.totalCost,
+          item.totalServices,
+          sharedSum,
+          otherSum,
         );
-        const marginDecimal = toDecimalUtils(item.margin);
-        item.marginPercent =
-          item.totalRevenue > 0
-            ? this.round2(marginDecimal.div(item.totalRevenue).times(100))
-            : 0;
+        item.marginPercent = this.metricsService.calculateMarginPercent(
+          item.margin,
+          item.totalRevenue,
+        );
         item.profitabilityPercent =
-          item.totalCost > 0
-            ? this.round2(marginDecimal.div(item.totalCost).times(100))
-            : 0;
+          this.metricsService.calculateProfitabilityPercent(
+            item.margin,
+            item.totalCost,
+          );
         items.push(item);
 
         totals.totalCost = toDecimalUtils(totals.totalCost)
@@ -212,26 +233,22 @@ export class FinanceService {
         });
       });
 
-      totals.buyoutPercent = this.computeBuyout(totals.statusCounts);
+      totals.buyoutPercent = this.metricsService.calculateBuyout(
+        totals.statusCounts,
+      );
       totals.totalCost = this.round2(totals.totalCost);
       totals.totalServices = this.round2(totals.totalServices);
       totals.totalRevenue = this.round2(totals.totalRevenue);
       totals.margin = this.round2(totals.margin);
-      const totalsMarginDecimal = toDecimalUtils(totals.margin);
-      totals.marginPercent =
-        totals.totalRevenue > 0
-          ? this.round2(
-              totalsMarginDecimal
-                .div(totals.totalRevenue)
-                .times(100),
-            )
-          : 0;
+      totals.marginPercent = this.metricsService.calculateMarginPercent(
+        totals.margin,
+        totals.totalRevenue,
+      );
       totals.profitabilityPercent =
-        totals.totalCost > 0
-          ? this.round2(
-              totalsMarginDecimal.div(totals.totalCost).times(100),
-            )
-          : 0;
+        this.metricsService.calculateProfitabilityPercent(
+          totals.margin,
+          totals.totalCost,
+        );
 
       months.push({ month, items, totals });
 
@@ -253,24 +270,22 @@ export class FinanceService {
       });
     });
 
-    overall.buyoutPercent = this.computeBuyout(overall.statusCounts);
+    overall.buyoutPercent = this.metricsService.calculateBuyout(
+      overall.statusCounts,
+    );
     overall.totalCost = this.round2(overall.totalCost);
     overall.totalServices = this.round2(overall.totalServices);
     overall.totalRevenue = this.round2(overall.totalRevenue);
     overall.margin = this.round2(overall.margin);
-    const overallMarginDecimal = toDecimalUtils(overall.margin);
-    overall.marginPercent =
-      overall.totalRevenue > 0
-        ? this.round2(
-            overallMarginDecimal.div(overall.totalRevenue).times(100),
-          )
-        : 0;
+    overall.marginPercent = this.metricsService.calculateMarginPercent(
+      overall.margin,
+      overall.totalRevenue,
+    );
     overall.profitabilityPercent =
-      overall.totalCost > 0
-        ? this.round2(
-            overallMarginDecimal.div(overall.totalCost).times(100),
-          )
-        : 0;
+      this.metricsService.calculateProfitabilityPercent(
+        overall.margin,
+        overall.totalCost,
+      );
 
     return { months, totals: overall };
   }
