@@ -15,4 +15,12 @@ export class AdvertisingApiService {
     async getStatistics(data: any) {
         return await this.http.fetchApiReportData('/api/client/statistics/json', data);
     }
+
+    async getDailyStatistics(data: any) {
+        const {data: rows} = await this.http.client.axiosRef.get('/api/client/statistics/daily/json', {
+            params: data
+        });
+
+        return rows;
+    }
 }

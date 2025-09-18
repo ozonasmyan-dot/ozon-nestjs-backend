@@ -1,10 +1,8 @@
 import {Injectable} from '@nestjs/common';
 import {AdvertisingApiService} from "@/api/performance/advertising.service";
 import Decimal from 'decimal.js';
-import {buildPeriods} from '@/shared/utils/date.utils';
-import dayjs from "dayjs";
+import {getDatesUntilToday} from '@/shared/utils/date.utils';
 import {AdvertisingRepository} from "@/modules/advertising/advertising.repository";
-import {AdvertisingEntity} from "@/modules/advertising/entities/advertising.entity";
 
 type AdvertisingAccumulator = {
     campaignId: string;
@@ -43,35 +41,26 @@ export class AdvertisingService {
     ) {
     }
 
-    async get(): Promise<AdvertisingEntity[]> {
-        const campaigns = await this.advertisingApiService.getCampaigns();
-        const periods = buildPeriods('2025-07-01');
-
+    async get(): Promise<any> {
+        const dates = getDatesUntilToday('2025-09-18');
         const regularCampaigns: AdvertisingAccumulator[] = [];
         const groupedCampaigns: Record<string, AdvertisingAccumulator> = {};
 
-        for (const period of periods) {
-            const activeCampaignIds = campaigns
-                .filter((c: { id: string; createdAt: string }) =>
-                    dayjs(c.createdAt).isBefore(period.to, 'day') || dayjs(c.createdAt).isSame(period.to, 'day')
-                )
-                .map((c: any) => c.id);
+        for (const date of dates) {
+            console.log(date);
+            const data  = await this.advertisingApiService.getDailyStatistics({
+                dateFrom: date,
+                dateTo: date,
+            });
 
-            if (!activeCampaignIds.length) {
-                continue;
-            }
+            console.log(data.rows);
 
-            const chunks = Array.from(
-                {length: Math.ceil(activeCampaignIds.length / 10)},
-                (_, i) => activeCampaignIds.slice(i * 10, i * 10 + 10),
-            ).filter((chunk) => chunk.length);
-
-            for (const chunk of chunks) {
+            if (data.rows.length !== 0) {
                 const statistics = await this.advertisingApiService.getStatistics({
-                    campaigns: chunk,
+                    campaigns: data.rows.map((item) => item.id),
                     groupBy: "DATE",
-                    dateFrom: period.from,
-                    dateTo: period.to,
+                    dateFrom: date,
+                    dateTo: date,
                 });
 
                 for (const [campaignId, campaign] of Object.entries(statistics ?? {})) {
@@ -111,26 +100,6 @@ export class AdvertisingService {
             }
         }
 
-        const aggregated = [...regularCampaigns, ...Object.values(groupedCampaigns)];
-
-        const items = aggregated.map((item) => {
-            const date = dayjs(item.date);
-            const normalizedDate = date.isValid() ? date.toDate() : new Date(item.date);
-
-            return new AdvertisingEntity({
-                campaignId: item.campaignId,
-                sku: item.sku,
-                date: normalizedDate,
-                type: item.type,
-                clicks: item.clicks,
-                toCart: item.toCart,
-                avgBid: item.avgBid.toNumber(),
-                moneySpent: item.moneySpent.toNumber(),
-            });
-        }).filter((item): item is AdvertisingEntity => !Number.isNaN(item.date.getTime()));
-
-        await this.advertisingRepository.upsertMany(items);
-
-        return items;
+        return [...regularCampaigns, ...Object.values(groupedCampaigns)];
     }
 }

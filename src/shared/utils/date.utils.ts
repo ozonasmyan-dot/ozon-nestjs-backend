@@ -1,4 +1,11 @@
-import dayjs from 'dayjs';
+import dayjs, {Dayjs} from 'dayjs';
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
+import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
+
+dayjs.extend(isSameOrBefore);
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 interface Period {
     from: string; // ISO-строка
@@ -27,4 +34,17 @@ export const buildPeriods = (startDate: string | Date): any => {
     }
 
     return periods;
+}
+
+export function getDatesUntilToday(startDate: string): string[] {
+    const dates: string[] = [];
+    let current = dayjs(startDate);
+    const today = dayjs().startOf('day');
+
+    while (current.isSameOrBefore(today, 'day')) {
+        dates.push(current.format('YYYY-MM-DD'));
+        current = current.add(1, 'day');
+    }
+
+    return dates;
 }
