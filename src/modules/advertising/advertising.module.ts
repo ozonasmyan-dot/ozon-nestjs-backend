@@ -4,11 +4,12 @@ import {AdvertisingController} from "@/modules/advertising/advertising.controlle
 import {AdvertisingApiService} from "@/api/performance/advertising.service";
 import {PerformanceApiModule} from "@/api/performance/performance.module";
 import {AdvertisingService} from "@/modules/advertising/advertising.service";
+import {AdvertisingRepository} from "@/modules/advertising/advertising.repository";
 
 @Module({
     imports: [PrismaModule, PerformanceApiModule],
     controllers: [AdvertisingController],
-    providers: [AdvertisingApiService, AdvertisingService],
+    providers: [AdvertisingApiService, AdvertisingService, AdvertisingRepository],
 })
 export class AdvertisingModule {
 }

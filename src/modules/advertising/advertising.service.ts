@@ -3,8 +3,10 @@ import {AdvertisingApiService} from "@/api/performance/advertising.service";
 import Decimal from 'decimal.js';
 import {buildPeriods} from '@/shared/utils/date.utils';
 import dayjs from "dayjs";
+import {AdvertisingRepository} from "@/modules/advertising/advertising.repository";
+import {AdvertisingEntity} from "@/modules/advertising/entities/advertising.entity";
 
-interface AdRow {
+type AdvertisingAccumulator = {
     campaignId: string;
     sku: string;
     date: string;
@@ -13,36 +15,57 @@ interface AdRow {
     toCart: number;
     avgBid: Decimal;
     moneySpent: Decimal;
-}
+};
+
+const toDecimal = (value: string | number | null | undefined): Decimal => {
+    if (value === null || value === undefined) {
+        return new Decimal(0);
+    }
+
+    if (typeof value === 'number') {
+        return new Decimal(value);
+    }
+
+    const normalized = value.replace(',', '.').trim();
+    return new Decimal(normalized.length ? normalized : '0');
+};
+
+const parseNumber = (value: unknown): number => {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+};
 
 @Injectable()
 export class AdvertisingService {
     constructor(
         private readonly advertisingApiService: AdvertisingApiService,
+        private readonly advertisingRepository: AdvertisingRepository,
     ) {
     }
 
-    async get() {
+    async get(): Promise<AdvertisingEntity[]> {
         const campaigns = await this.advertisingApiService.getCampaigns();
         const periods = buildPeriods('2025-07-01');
 
-        const ads: AdRow[] = [];
-        const group12950100: Record<string, AdRow> = {};
-        const D = (v: string) => new Decimal(v);
+        const regularCampaigns: AdvertisingAccumulator[] = [];
+        const groupedCampaigns: Record<string, AdvertisingAccumulator> = {};
 
         for (const period of periods) {
-            // Берем все кампании, которые уже созданы на момент конца периода
-            const activeCampaignIds = campaigns
+            const activeCampaignIds = (campaigns ?? [])
                 .filter((c: { id: string; createdAt: string }) => {
                     const created = dayjs(c.createdAt);
-                    return created.isSame(period.to, 'day') || created.isBefore(period.to, 'day');
+                    return created.isBefore(period.to, 'day') || created.isSame(period.to, 'day');
                 })
-                .map(c => c.id);
+                .map((c: { id: string }) => c.id);
+
+            if (!activeCampaignIds.length) {
+                continue;
+            }
 
             const chunks = Array.from(
-                { length: Math.ceil(activeCampaignIds.length / 10) },
-                (_, i) => activeCampaignIds.slice(i * 10, i * 10 + 10)
-            );
+                {length: Math.ceil(activeCampaignIds.length / 10)},
+                (_, i) => activeCampaignIds.slice(i * 10, i * 10 + 10),
+            ).filter((chunk) => chunk.length);
 
             for (const chunk of chunks) {
                 const statistics = await this.advertisingApiService.getStatistics({
@@ -52,45 +75,63 @@ export class AdvertisingService {
                     dateTo: period.to,
                 });
 
-                for (const [campaignId, campaign] of Object.entries(statistics)) {
-                    // @ts-ignore
-                    for (const row of campaign?.report?.rows ?? []) {
-                        if (campaignId !== '12950100') {
-                            ads.push({
-                                campaignId,
-                                sku: row.sku,
-                                date: row.date,
-                                type: 'CPC',
-                                clicks: row.clicks,
-                                toCart: row.toCart,
-                                avgBid: D((row.avgBid ?? '0').replace(',', '.')),
-                                moneySpent: D((row.moneySpent ?? '0').replace(',', '.')),
-                            });
-                        } else {
-                            const key = `${row.date}_${row.advSku}`;
-                            if (!group12950100[key]) {
-                                group12950100[key] = {
-                                    campaignId: key,
-                                    sku: row.advSku,
-                                    date: row.date,
-                                    type: 'CPO',
-                                    clicks: 0,
-                                    toCart: 0,
-                                    avgBid: D((row.avgBid ?? '0').replace(',', '.')),
-                                    moneySpent: D((row.moneySpent ?? '0').replace(',', '.')),
-                                };
+                for (const [campaignId, campaign] of Object.entries(statistics ?? {})) {
+                    const rows = (campaign as any)?.report?.rows ?? [];
+
+                    for (const row of rows) {
+                        const skuValue = campaignId === '12950100' ? row?.advSku : row?.sku;
+                        const sku = skuValue === undefined || skuValue === null ? '' : String(skuValue);
+
+                        const accumulator: AdvertisingAccumulator = {
+                            campaignId,
+                            sku,
+                            date: String(row?.date ?? ''),
+                            type: campaignId === '12950100' ? 'CPO' : 'CPC',
+                            clicks: parseNumber(row?.clicks),
+                            toCart: parseNumber(row?.toCart),
+                            avgBid: toDecimal(row?.avgBid),
+                            moneySpent: toDecimal(row?.moneySpent),
+                        };
+
+                        if (campaignId === '12950100') {
+                            const key = `${accumulator.date}_${accumulator.sku}`;
+                            const existing = groupedCampaigns[key];
+
+                            if (existing) {
+                                existing.clicks += accumulator.clicks;
+                                existing.toCart += accumulator.toCart;
+                                existing.moneySpent = existing.moneySpent.plus(accumulator.moneySpent);
                             } else {
-                                group12950100[key].moneySpent = group12950100[key].moneySpent
-                                    .plus((row.moneySpent ?? '0').replace(',', '.'));
+                                groupedCampaigns[key] = accumulator;
                             }
+                        } else {
+                            regularCampaigns.push(accumulator);
                         }
                     }
                 }
             }
         }
 
-// добавляем сгруппированные CPO только после всех периодов
-        ads.push(...Object.values(group12950100));
+        const aggregated = [...regularCampaigns, ...Object.values(groupedCampaigns)];
 
+        const items = aggregated.map((item) => {
+            const date = dayjs(item.date);
+            const normalizedDate = date.isValid() ? date.toDate() : new Date(item.date);
+
+            return new AdvertisingEntity({
+                campaignId: item.campaignId,
+                sku: item.sku,
+                date: normalizedDate,
+                type: item.type,
+                clicks: item.clicks,
+                toCart: item.toCart,
+                avgBid: item.avgBid.toNumber(),
+                moneySpent: item.moneySpent.toNumber(),
+            });
+        }).filter((item): item is AdvertisingEntity => !Number.isNaN(item.date.getTime()));
+
+        await this.advertisingRepository.upsertMany(items);
+
+        return items;
     }
 }
