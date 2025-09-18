@@ -2,6 +2,7 @@ import {Injectable} from '@nestjs/common';
 import {AdvertisingApiService} from "@/api/performance/advertising.service";
 import Decimal from 'decimal.js';
 import {buildPeriods} from '@/shared/utils/date.utils';
+import dayjs from "dayjs";
 
 @Injectable()
 export class AdvertisingService {
@@ -12,15 +13,29 @@ export class AdvertisingService {
 
     async get() {
         const campaigns = await this.advertisingApiService.getCampaigns();
-        const campaignIds = campaigns.map((c: { id: any; }) => c.id);
-        const chunks = Array.from({length: Math.ceil(campaignIds.length / 10)}, (_, i) => campaignIds.slice(i * 10, i * 10 + 10));
+        const periods = buildPeriods('2025-07-01');
+
         const ads: any[] = [];
         const group12950100: Record<string, any> = {};
         const D = (v: string) => new Decimal(v);
-        const periods = buildPeriods('2025-07-01');
 
-        for (const chunk of chunks) {
-            for (const period of periods) {
+        for (const period of periods) {
+            // 1️⃣ Отбираем кампании, которые стартовали не позже конца периода
+            const activeCampaignIds = campaigns
+                .filter((c: { id: string; createdAt: string }) => {
+                    // createdAt в формате ISO/строки — приводим к dayjs
+                    const created = dayjs(c.createdAt);
+                    return created.isBefore(period.to, 'day') || created.isSame(period.to, 'day');
+                })
+                .map(c => c.id);
+
+            // 2️⃣ Делим оставшиеся ID на чанки по 10
+            const chunks = Array.from(
+                {length: Math.ceil(activeCampaignIds.length / 10)},
+                (_, i) => activeCampaignIds.slice(i * 10, i * 10 + 10)
+            );
+
+            for (const chunk of chunks) {
                 const statistics = await this.advertisingApiService.getStatistics({
                     campaigns: chunk,
                     groupBy: "DATE",
@@ -30,7 +45,7 @@ export class AdvertisingService {
 
                 for (const [campaignId, campaign] of Object.entries(statistics)) {
                     // @ts-ignore
-                    for (const row of campaign?.report.rows as any) {
+                    for (const row of campaign?.report?.rows ?? []) {
                         if (campaignId !== '12950100') {
                             ads.push({
                                 campaignId,
@@ -44,8 +59,7 @@ export class AdvertisingService {
                             });
                         } else {
                             const key = `${row.date}_${row.advSku}`;
-
-                            if (group12950100[key] === undefined) {
+                            if (!group12950100[key]) {
                                 group12950100[key] = {
                                     campaignId: key,
                                     sku: row.advSku,
@@ -57,20 +71,17 @@ export class AdvertisingService {
                                     moneySpent: D((row.moneySpent ?? '0').replace(',', '.')),
                                 };
                             } else {
-                                group12950100[key] = {
-                                    ...group12950100[key],
-                                    moneySpent: D(group12950100[key].moneySpent)
-                                        .plus((row.moneySpent ?? '0').replace(',', '.')),
-                                };
+                                group12950100[key].moneySpent = D(group12950100[key].moneySpent)
+                                    .plus((row.moneySpent ?? '0').replace(',', '.'));
                             }
                         }
                     }
                 }
-
-                ads.push(...Object.values(group12950100));
             }
         }
 
-        return periods;
+        ads.push(...Object.values(group12950100));
+
+        return ads
     }
 }
