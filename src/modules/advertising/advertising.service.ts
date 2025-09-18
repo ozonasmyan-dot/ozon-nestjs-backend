@@ -47,8 +47,9 @@ export class AdvertisingService {
         const campaigns = await this.advertisingApiService.getCampaigns();
         const periods = buildPeriods('2025-07-01');
 
-        const regularCampaigns: AdvertisingAccumulator[] = [];
+        const regularEntities: AdvertisingEntity[] = [];
         const groupedCampaigns: Record<string, AdvertisingAccumulator> = {};
+        const groupedEntities = new Map<string, AdvertisingEntity>();
 
         for (const period of periods) {
             const activeCampaignIds = campaigns
@@ -67,6 +68,9 @@ export class AdvertisingService {
             ).filter((chunk) => chunk.length);
 
             for (const chunk of chunks) {
+                const chunkRegularAccumulators: AdvertisingAccumulator[] = [];
+                const changedGroupedKeys = new Set<string>();
+
                 const statistics = await this.advertisingApiService.getStatistics({
                     campaigns: chunk,
                     groupBy: "DATE",
@@ -100,37 +104,69 @@ export class AdvertisingService {
                                 existing.clicks += accumulator.clicks;
                                 existing.toCart += accumulator.toCart;
                                 existing.moneySpent = existing.moneySpent.plus(accumulator.moneySpent);
+                                existing.avgBid = accumulator.avgBid;
                             } else {
                                 groupedCampaigns[key] = accumulator;
                             }
+
+                            changedGroupedKeys.add(key);
                         } else {
-                            regularCampaigns.push(accumulator);
+                            chunkRegularAccumulators.push(accumulator);
                         }
                     }
                 }
+
+                const chunkRegularEntities = chunkRegularAccumulators
+                    .map((item) => this.createEntity(item))
+                    .filter((item): item is AdvertisingEntity => Boolean(item));
+
+                const chunkGroupedEntities: AdvertisingEntity[] = [];
+
+                for (const key of changedGroupedKeys) {
+                    const entity = this.createEntity(groupedCampaigns[key]);
+
+                    if (entity) {
+                        groupedEntities.set(key, entity);
+                        chunkGroupedEntities.push(entity);
+                    }
+                }
+
+                const chunkEntitiesToPersist = [...chunkRegularEntities, ...chunkGroupedEntities];
+
+                if (chunkEntitiesToPersist.length) {
+                    await this.advertisingRepository.upsertMany(chunkEntitiesToPersist);
+                }
+
+                regularEntities.push(...chunkRegularEntities);
             }
         }
 
-        const aggregated = [...regularCampaigns, ...Object.values(groupedCampaigns)];
+        const groupedEntitiesList = Array.from(groupedEntities.values());
 
-        const items = aggregated.map((item) => {
-            const date = dayjs(item.date);
-            const normalizedDate = date.isValid() ? date.toDate() : new Date(item.date);
+        return [...regularEntities, ...groupedEntitiesList];
+    }
 
-            return new AdvertisingEntity({
-                campaignId: item.campaignId,
-                sku: item.sku,
-                date: normalizedDate,
-                type: item.type,
-                clicks: item.clicks,
-                toCart: item.toCart,
-                avgBid: item.avgBid.toNumber(),
-                moneySpent: item.moneySpent.toNumber(),
-            });
-        }).filter((item): item is AdvertisingEntity => !Number.isNaN(item.date.getTime()));
+    private createEntity(item: AdvertisingAccumulator | undefined): AdvertisingEntity | null {
+        if (!item) {
+            return null;
+        }
 
-        await this.advertisingRepository.upsertMany(items);
+        const date = dayjs(item.date);
+        const normalizedDate = date.isValid() ? date.toDate() : new Date(item.date);
 
-        return items;
+        if (Number.isNaN(normalizedDate.getTime())) {
+            return null;
+        }
+
+        return new AdvertisingEntity({
+            campaignId: item.campaignId,
+            sku: item.sku,
+            date: normalizedDate,
+            type: item.type,
+            clicks: item.clicks,
+            toCart: item.toCart,
+            avgBid: item.avgBid.toNumber(),
+            moneySpent: item.moneySpent.toNumber(),
+        });
     }
 }
