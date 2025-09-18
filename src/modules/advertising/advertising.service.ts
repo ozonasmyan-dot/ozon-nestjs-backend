@@ -51,12 +51,11 @@ export class AdvertisingService {
         const groupedCampaigns: Record<string, AdvertisingAccumulator> = {};
 
         for (const period of periods) {
-            const activeCampaignIds = (campaigns ?? [])
-                .filter((c: { id: string; createdAt: string }) => {
-                    const created = dayjs(c.createdAt);
-                    return created.isBefore(period.to, 'day') || created.isSame(period.to, 'day');
-                })
-                .map((c: { id: string }) => c.id);
+            const activeCampaignIds = campaigns
+                .filter((c: { id: string; createdAt: string }) =>
+                    dayjs(c.createdAt).isBefore(period.to, 'day') || dayjs(c.createdAt).isSame(period.to, 'day')
+                )
+                .map((c: any) => c.id);
 
             if (!activeCampaignIds.length) {
                 continue;
