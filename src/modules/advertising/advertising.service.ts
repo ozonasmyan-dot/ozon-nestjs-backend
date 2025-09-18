@@ -4,6 +4,7 @@ import Decimal from 'decimal.js';
 import {getDatesUntilToday} from '@/shared/utils/date.utils';
 import {AdvertisingRepository} from "@/modules/advertising/advertising.repository";
 import {AdvertisingEntity} from "@/modules/advertising/entities/advertising.entity";
+import dayjs from "dayjs";
 
 type AdvertisingAccumulator = {
     campaignId: string;
@@ -34,16 +35,6 @@ const toDecimal = (value: string | number | null | undefined): Decimal => {
 const parseNumber = (value: unknown): number => {
     const parsed = Number(value);
     return Number.isFinite(parsed) ? parsed : 0;
-};
-
-const parseDate = (value: string): Date => {
-    const parsed = Date.parse(value);
-
-    if (Number.isNaN(parsed)) {
-        return new Date();
-    }
-
-    return new Date(parsed);
 };
 
 @Injectable()
@@ -126,6 +117,8 @@ export class AdvertisingService {
                     } else {
                         await addEntity(accumulator);
                     }
+
+                    console.log(accumulator);
                 }
             }
         }
@@ -143,7 +136,7 @@ export class AdvertisingService {
         return new AdvertisingEntity({
             campaignId: accumulator.campaignId,
             sku: accumulator.sku,
-            date: parseDate(accumulator.date),
+            date: accumulator.date,
             type: accumulator.type,
             clicks: accumulator.clicks,
             toCart: accumulator.toCart,

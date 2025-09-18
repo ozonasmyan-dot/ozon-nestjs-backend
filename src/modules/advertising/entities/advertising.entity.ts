@@ -6,7 +6,7 @@ export class AdvertisingEntity implements Advertising {
   id: string;
   campaignId: string;
   sku: string;
-  date: Date;
+  date: string;
   type: string;
   clicks: number;
   toCart: number;
