@@ -6,7 +6,7 @@ import { OZON_PERFORMANCE_API_URL } from "@/config";
 @Module({
   imports: [
     HttpModule.register({
-      baseURL: OZON_PERFORMANCE_API_URL,
+      baseURL: 'https://api-performance.ozon.ru:443/',
       headers: {
         "Content-Type": "application/json",
       },

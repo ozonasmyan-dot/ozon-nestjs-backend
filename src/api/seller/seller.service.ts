@@ -6,7 +6,6 @@ import {waitRateLimit} from "@/shared/utils/rate-limit.utils";
 export class SellerApiService {
     constructor(private readonly http: HttpService) {
         this.http.axiosRef.interceptors.request.use(async (config) => {
-            await waitRateLimit();
             return config;
         });
     }

@@ -5,9 +5,10 @@ import {AppService} from "./app.service";
 import {PrismaModule} from "./prisma/prisma.module";
 import {TransactionModule} from "./modules/transaction/transaction.module";
 import {OrderModule} from "./modules/order/order.module";
-import { UnitModule } from './modules/unit/unit.module';
-import { PerformanceApiModule } from "./api/performance/performance.module";
-import { SellerApiModule } from "./api/seller/seller.module";
+import {UnitModule} from './modules/unit/unit.module';
+import {PerformanceApiModule} from "./api/performance/performance.module";
+import {AdvertisingModule} from "@/modules/advertising/advertising.module";
+import {SellerApiModule} from "./api/seller/seller.module";
 import ozonConfig from "@/config/ozon.config";
 
 @Module({
@@ -23,6 +24,7 @@ import ozonConfig from "@/config/ozon.config";
         UnitModule,
         PerformanceApiModule,
         SellerApiModule,
+        AdvertisingModule,
     ],
     controllers: [AppController],
     providers: [AppService],

@@ -22,8 +22,6 @@ describe('UnitEntity status calculation', () => {
     it('should return CancelPVZ when cancelled and return transaction exists', () => {
         const unit = new UnitEntity(getOrder('cancel-pvz'));
 
-        console.log(unit);
-
         expect(unit.status).toBe(CustomStatus.CancelPVZ);
         expect(unit.costPrice).toBe(0);
         expect(unit.margin).toBeCloseTo(-400);

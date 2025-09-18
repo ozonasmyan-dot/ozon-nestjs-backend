@@ -35,3 +35,20 @@ model Order {
 
   @@unique([postingNumber])
 }
+
+model Advertising {
+  id           String   @id @default(uuid())
+  campaignId   String
+  productId    String
+  type         String
+  moneySpent   Float
+  views        Int
+  clicks       Int
+  toCart       Int
+  weeklyBudget Int
+  status       String
+  avgBid       Float
+  savedAt      DateTime
+
+  @@unique([campaignId, productId, type, savedAt])
+}

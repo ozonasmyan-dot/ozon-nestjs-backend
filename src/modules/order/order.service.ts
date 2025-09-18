@@ -28,7 +28,7 @@ export class OrderService {
       const financial = posting.financial_data?.products?.[0] ?? {};
 
       const data = new OrderEntity({
-        product: product.name ?? "",
+        product: product.offer_id ?? '',
         orderId: String(posting.order_id ?? ""),
         orderNumber: posting.order_number ?? "",
         postingNumber: posting.posting_number ?? "",
