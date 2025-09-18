@@ -3,6 +3,7 @@ import {AdvertisingApiService} from "@/api/performance/advertising.service";
 import Decimal from 'decimal.js';
 import {getDatesUntilToday} from '@/shared/utils/date.utils';
 import {AdvertisingRepository} from "@/modules/advertising/advertising.repository";
+import {AdvertisingEntity} from "@/modules/advertising/entities/advertising.entity";
 
 type AdvertisingAccumulator = {
     campaignId: string;
@@ -14,6 +15,8 @@ type AdvertisingAccumulator = {
     avgBid: Decimal;
     moneySpent: Decimal;
 };
+
+const BATCH_SIZE = 100;
 
 const toDecimal = (value: string | number | null | undefined): Decimal => {
     if (value === null || value === undefined) {
@@ -33,6 +36,16 @@ const parseNumber = (value: unknown): number => {
     return Number.isFinite(parsed) ? parsed : 0;
 };
 
+const parseDate = (value: string): Date => {
+    const parsed = Date.parse(value);
+
+    if (Number.isNaN(parsed)) {
+        return new Date();
+    }
+
+    return new Date(parsed);
+};
+
 @Injectable()
 export class AdvertisingService {
     constructor(
@@ -41,11 +54,32 @@ export class AdvertisingService {
     ) {
     }
 
-    async get(): Promise<any> {
+    async get(): Promise<AdvertisingEntity[]> {
         const campaigns = await this.advertisingApiService.getCampaigns();
         const dates = getDatesUntilToday('2025-09-17');
-        const regular: AdvertisingAccumulator[] = [];
+        const buffer: AdvertisingEntity[] = [];
+        const result: AdvertisingEntity[] = [];
         const groupedCampaigns: Record<string, AdvertisingAccumulator> = {};
+
+        const flush = async () => {
+            if (!buffer.length) {
+                return;
+            }
+
+            const batch = buffer.splice(0);
+            await this.advertisingRepository.upsertMany(batch);
+        };
+
+        const addEntity = async (accumulator: AdvertisingAccumulator) => {
+            const entity = this.createEntity(accumulator);
+
+            buffer.push(entity);
+            result.push(entity);
+
+            if (buffer.length >= BATCH_SIZE) {
+                await flush();
+            }
+        };
 
         for (const date of dates) {
             const items = await this.advertisingApiService.getDailyStatistics({
@@ -90,12 +124,31 @@ export class AdvertisingService {
                             groupedCampaigns[key] = accumulator;
                         }
                     } else {
-                        regular.push(accumulator);
+                        await addEntity(accumulator);
                     }
                 }
             }
         }
 
-        return [...regular, ...Object.values(groupedCampaigns)];
+        for (const accumulator of Object.values(groupedCampaigns)) {
+            await addEntity(accumulator);
+        }
+
+        await flush();
+
+        return result;
+    }
+
+    private createEntity(accumulator: AdvertisingAccumulator): AdvertisingEntity {
+        return new AdvertisingEntity({
+            campaignId: accumulator.campaignId,
+            sku: accumulator.sku,
+            date: parseDate(accumulator.date),
+            type: accumulator.type,
+            clicks: accumulator.clicks,
+            toCart: accumulator.toCart,
+            avgBid: accumulator.avgBid.toNumber(),
+            moneySpent: accumulator.moneySpent.toNumber(),
+        });
     }
 }
