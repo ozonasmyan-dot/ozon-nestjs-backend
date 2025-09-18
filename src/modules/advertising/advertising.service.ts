@@ -4,6 +4,17 @@ import Decimal from 'decimal.js';
 import {buildPeriods} from '@/shared/utils/date.utils';
 import dayjs from "dayjs";
 
+interface AdRow {
+    campaignId: string;
+    sku: string;
+    date: string;
+    type: 'CPC' | 'CPO';
+    clicks: number;
+    toCart: number;
+    avgBid: Decimal;
+    moneySpent: Decimal;
+}
+
 @Injectable()
 export class AdvertisingService {
     constructor(
@@ -15,23 +26,21 @@ export class AdvertisingService {
         const campaigns = await this.advertisingApiService.getCampaigns();
         const periods = buildPeriods('2025-07-01');
 
-        const ads: any[] = [];
-        const group12950100: Record<string, any> = {};
+        const ads: AdRow[] = [];
+        const group12950100: Record<string, AdRow> = {};
         const D = (v: string) => new Decimal(v);
 
         for (const period of periods) {
-            // 1️⃣ Отбираем кампании, которые стартовали не позже конца периода
+            // Берем все кампании, которые уже созданы на момент конца периода
             const activeCampaignIds = campaigns
                 .filter((c: { id: string; createdAt: string }) => {
-                    // createdAt в формате ISO/строки — приводим к dayjs
                     const created = dayjs(c.createdAt);
-                    return created.isBefore(period.to, 'day') || created.isSame(period.to, 'day');
+                    return created.isSame(period.to, 'day') || created.isBefore(period.to, 'day');
                 })
                 .map(c => c.id);
 
-            // 2️⃣ Делим оставшиеся ID на чанки по 10
             const chunks = Array.from(
-                {length: Math.ceil(activeCampaignIds.length / 10)},
+                { length: Math.ceil(activeCampaignIds.length / 10) },
                 (_, i) => activeCampaignIds.slice(i * 10, i * 10 + 10)
             );
 
@@ -52,7 +61,7 @@ export class AdvertisingService {
                                 sku: row.sku,
                                 date: row.date,
                                 type: 'CPC',
-                                click: row.clicks,
+                                clicks: row.clicks,
                                 toCart: row.toCart,
                                 avgBid: D((row.avgBid ?? '0').replace(',', '.')),
                                 moneySpent: D((row.moneySpent ?? '0').replace(',', '.')),
@@ -71,7 +80,7 @@ export class AdvertisingService {
                                     moneySpent: D((row.moneySpent ?? '0').replace(',', '.')),
                                 };
                             } else {
-                                group12950100[key].moneySpent = D(group12950100[key].moneySpent)
+                                group12950100[key].moneySpent = group12950100[key].moneySpent
                                     .plus((row.moneySpent ?? '0').replace(',', '.'));
                             }
                         }
@@ -80,8 +89,8 @@ export class AdvertisingService {
             }
         }
 
+// добавляем сгруппированные CPO только после всех периодов
         ads.push(...Object.values(group12950100));
 
-        return ads
     }
 }
