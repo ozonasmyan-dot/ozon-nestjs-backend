@@ -108,6 +108,8 @@ export class UnitService {
             return new Map<string, number>();
         }
 
+        await this.populateMonthlyOrderCounts(monthlyStats);
+
         const ranges = this.buildAdvertisingRangesFromStats(monthlyStats.values());
 
         if (!ranges.length) {
@@ -161,6 +163,31 @@ export class UnitService {
         }
 
         return ranges;
+    }
+
+    private async populateMonthlyOrderCounts(
+        stats: Map<string, MonthlyOrderStat>,
+    ): Promise<void> {
+        if (!stats.size) {
+            return;
+        }
+
+        const ranges = Array.from(stats.values()).map((stat) => ({
+            key: stat.key,
+            sku: stat.sku,
+            dateFrom: stat.dateFrom,
+            dateTo: stat.dateTo,
+        }));
+
+        const counts = await this.orderRepository.countBySkuAndDateRanges(ranges);
+
+        for (const stat of stats.values()) {
+            const total = counts.get(stat.key);
+
+            if (typeof total === "number" && total > 0) {
+                stat.count = total;
+            }
+        }
     }
 
     private buildAdvertisingKey(order: OrderEntity): string | undefined {

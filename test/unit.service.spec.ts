@@ -11,6 +11,8 @@ describe("UnitService", () => {
   let transactions: any[];
   let unitFactory: UnitFactory;
   let findBySkuAndDateRanges: jest.Mock;
+  let countBySkuAndDateRanges: jest.Mock;
+  let findAll: jest.Mock;
 
   beforeEach(() => {
     orders = ordersFixture.map((o) => ({
@@ -23,8 +25,17 @@ describe("UnitService", () => {
       })),
     }));
     transactions = orders.flatMap((o) => o.transactions);
+    findAll = jest.fn().mockResolvedValue(orders);
+    countBySkuAndDateRanges = jest
+      .fn()
+      .mockImplementation(() =>
+        Promise.resolve(
+          new Map([[`${orders[0].sku}-2024-01`, orders.length]]),
+        ),
+      );
     const orderRepository = {
-      findAll: jest.fn().mockResolvedValue(orders),
+      findAll,
+      countBySkuAndDateRanges,
     } as unknown as OrderRepository;
     const transactionRepository = {
       findByPostingNumbers: jest
@@ -54,6 +65,14 @@ describe("UnitService", () => {
   it("passes per-order monthly advertising expenses to the factory", async () => {
     const spy = jest.spyOn(unitFactory, "createUnit");
     await service.aggregate({});
+    expect(countBySkuAndDateRanges).toHaveBeenCalledWith([
+      {
+        key: "1828048543-2024-01",
+        sku: "1828048543",
+        dateFrom: "2024-01-01",
+        dateTo: "2024-02-01",
+      },
+    ]);
     expect(findBySkuAndDateRanges).toHaveBeenCalledWith([
       { sku: "1828048543", dateFrom: "2024-01-01", dateTo: "2024-02-01" },
     ]);
@@ -61,6 +80,15 @@ describe("UnitService", () => {
     for (const call of spy.mock.calls) {
       expect(call[2]).toBeCloseTo(2.5, 2);
     }
+  });
+
+  it("ignores filters when computing monthly advertising spend", async () => {
+    findAll.mockResolvedValueOnce([orders[0]]);
+
+    const items = await service.aggregate({ status: "delivered" });
+
+    expect(items).toHaveLength(1);
+    expect(items[0].advertisingExpense).toBeCloseTo(2.5, 2);
   });
 
   it("parses dot separated advertising dates", async () => {
