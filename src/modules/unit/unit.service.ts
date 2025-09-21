@@ -8,6 +8,7 @@ import {buildOrderWhere} from "./utils/order-filter.utils";
 import {UnitFactory} from "./unit.factory";
 import dayjs, { Dayjs } from "dayjs";
 import Decimal from "@/shared/utils/decimal";
+import { toDecimalUtils } from "@/shared/utils/to-decimal.utils";
 import {
     AdvertisingDateRange,
     AdvertisingRepository,
@@ -101,8 +102,13 @@ export class UnitService {
             return new Map<string, number>();
         }
 
-        const ranges = this.buildAdvertisingRanges(orders);
-        const orderCounts = this.countOrdersByAdvertisingKey(orders);
+        const monthlyStats = this.buildMonthlyOrderStats(orders);
+
+        if (!monthlyStats.size) {
+            return new Map<string, number>();
+        }
+
+        const ranges = this.buildAdvertisingRangesFromStats(monthlyStats.values());
 
         if (!ranges.length) {
             return new Map<string, number>();
@@ -121,68 +127,40 @@ export class UnitService {
             if (!monthKey) {
                 continue;
             }
-            const key = `${expense.sku}-${monthKey}`;
+            const key = this.buildAdvertisingKeyFromParts(expense.sku, monthKey);
             const current = totals.get(key) ?? new Decimal(0);
-            totals.set(key, current.plus(expense.moneySpent));
+            totals.set(key, current.plus(toDecimalUtils(expense.moneySpent)));
         }
 
         const result = new Map<string, number>();
-        for (const [key, value] of totals.entries()) {
-            const count = orderCounts.get(key);
+        for (const [key, stat] of monthlyStats.entries()) {
+            const total = totals.get(key);
 
-            if (!count || count <= 0) {
+            if (!total || stat.count <= 0) {
                 continue;
             }
 
-            const perOrder = value.dividedBy(count);
+            const perOrder = total.dividedBy(stat.count);
             result.set(key, perOrder.toDecimalPlaces(2).toNumber());
         }
 
         return result;
     }
 
-    private countOrdersByAdvertisingKey(orders: OrderEntity[]): Map<string, number> {
-        const counts = new Map<string, number>();
+    private buildAdvertisingRangesFromStats(
+        stats: Iterable<MonthlyOrderStat>,
+    ): AdvertisingDateRange[] {
+        const ranges: AdvertisingDateRange[] = [];
 
-        for (const order of orders) {
-            const key = this.buildAdvertisingKey(order);
-
-            if (!key) {
-                continue;
-            }
-
-            counts.set(key, (counts.get(key) ?? 0) + 1);
+        for (const stat of stats) {
+            ranges.push({
+                sku: stat.sku,
+                dateFrom: stat.dateFrom,
+                dateTo: stat.dateTo,
+            });
         }
 
-        return counts;
-    }
-
-    private buildAdvertisingRanges(orders: OrderEntity[]): AdvertisingDateRange[] {
-        const ranges = new Map<string, AdvertisingDateRange>();
-
-        for (const order of orders) {
-            const key = this.buildAdvertisingKey(order);
-
-            if (!key || !order.createdAt) {
-                continue;
-            }
-
-            if (!ranges.has(key)) {
-                const period = this.resolveAdvertisingPeriod(order.createdAt);
-
-                if (!period) {
-                    continue;
-                }
-
-                ranges.set(key, {
-                    sku: order.sku,
-                    dateFrom: period.dateFrom,
-                    dateTo: period.dateTo,
-                });
-            }
-        }
-
-        return Array.from(ranges.values());
+        return ranges;
     }
 
     private buildAdvertisingKey(order: OrderEntity): string | undefined {
@@ -196,7 +174,53 @@ export class UnitService {
             return undefined;
         }
 
-        return `${order.sku}-${date.format("YYYY-MM")}`;
+        return this.buildAdvertisingKeyFromParts(order.sku, date.format("YYYY-MM"));
+    }
+
+    private buildAdvertisingKeyFromParts(sku: string, month: string): string {
+        return `${sku}-${month}`;
+    }
+
+    private buildMonthlyOrderStats(orders: OrderEntity[]): Map<string, MonthlyOrderStat> {
+        const stats = new Map<string, MonthlyOrderStat>();
+
+        for (const order of orders) {
+            if (!order.sku || !order.createdAt) {
+                continue;
+            }
+
+            const date = dayjs(order.createdAt);
+
+            if (!date.isValid()) {
+                continue;
+            }
+
+            const month = date.format("YYYY-MM");
+            const key = this.buildAdvertisingKeyFromParts(order.sku, month);
+            const existing = stats.get(key);
+
+            if (existing) {
+                existing.count += 1;
+                continue;
+            }
+
+            const period = this.resolveAdvertisingPeriod(order.createdAt);
+
+            if (!period) {
+                continue;
+            }
+
+            stats.set(key, {
+                key,
+                sku: order.sku,
+                month,
+                count: 1,
+                dateFrom: period.dateFrom,
+                dateTo: period.dateTo,
+            });
+        }
+
+        return stats;
     }
 
     private resolveAdvertisingPeriod(date: Date): { dateFrom: string; dateTo: string } | undefined {
@@ -262,4 +286,13 @@ export class UnitService {
 
         return `${normalizedYear.padStart(4, "0")}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
     }
+}
+
+interface MonthlyOrderStat {
+    key: string;
+    sku: string;
+    month: string;
+    count: number;
+    dateFrom: string;
+    dateTo: string;
 }
