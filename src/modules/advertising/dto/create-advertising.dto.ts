@@ -6,5 +6,9 @@ export class CreateAdvertisingDto {
   clicks: number;
   toCart: number;
   avgBid: number;
+  minBidCpo: number;
+  minBidCpoTop: number;
+  competitiveBid: number;
+  weeklyBudget: number;
   moneySpent: number;
 }

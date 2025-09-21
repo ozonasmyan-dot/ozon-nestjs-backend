@@ -37,16 +37,20 @@ model Order {
 }
 
 model Advertising {
-  id         String   @id @default(uuid())
-  campaignId String
-  sku        String
-  date       String
-  type       String
-  clicks     Int
-  toCart     Int
-  avgBid     Float
-  moneySpent Float
-  createdAt  DateTime @default(now())
+  id             String   @id @default(uuid())
+  campaignId     String
+  sku            String
+  date           String
+  type           String
+  clicks         Int
+  toCart         Int
+  avgBid         Float
+  competitiveBid Float
+  minBidCpo      Float
+  minBidCpoTop   Float
+  moneySpent     Float
+  weeklyBudget   Float
+  createdAt      DateTime @default(now())
 
   @@unique([campaignId, sku, date, type])
 }

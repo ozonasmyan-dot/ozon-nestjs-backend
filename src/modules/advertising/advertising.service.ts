@@ -17,6 +17,10 @@ type AdvertisingAccumulator = {
     toCart: number;
     avgBid: Decimal;
     moneySpent: Decimal;
+    competitiveBid: Decimal;
+    minBidCpo: Decimal;
+    minBidCpoTop: Decimal;
+    weeklyBudget: Decimal;
 };
 
 @Injectable()
@@ -28,12 +32,25 @@ export class AdvertisingService {
     }
 
     async get(): Promise<AdvertisingEntity[]> {
-        const dates = getDatesUntilToday('2025-09-17');
+        const dates = getDatesUntilToday('2025-09-21');
         const result: AdvertisingEntity[] = [];
         const groupedCampaigns: Record<string, AdvertisingAccumulator> = {};
 
         const addEntity = async (accumulator: AdvertisingAccumulator) => {
-            const dto = this.createDto(accumulator);
+            const dto: CreateAdvertisingDto = {
+                campaignId: accumulator.campaignId,
+                sku: accumulator.sku,
+                date: accumulator.date,
+                type: accumulator.type,
+                clicks: accumulator.clicks,
+                toCart: accumulator.toCart,
+                minBidCpo: accumulator.minBidCpo.toNumber(),
+                minBidCpoTop: accumulator.minBidCpoTop.toNumber(),
+                competitiveBid: accumulator.competitiveBid.toNumber(),
+                weeklyBudget: accumulator.weeklyBudget.toNumber(),
+                avgBid: accumulator.avgBid.toNumber(),
+                moneySpent: accumulator.moneySpent.toNumber(),
+            };
             const entity = this.createEntity(dto);
 
             result.push(entity);
@@ -60,6 +77,35 @@ export class AdvertisingService {
                 for (const row of rows) {
                     const skuValue = campaignId === '12950100' ? row?.advSku : row?.sku;
                     const sku = skuValue === undefined || skuValue === null ? '' : String(skuValue);
+                    let competitiveBid = 0;
+                    let minBidCpo = 0;
+                    let minBidCpoTop = 0;
+
+                    const otherStats = await this.advertisingApiService.getStatisticsExpense({
+                        campaignIds: campaignId,
+                        dateFrom: date,
+                        dateTo: date,
+                    });
+
+                    if (campaignId !== '12950100') {
+                        const competitiveBidQuery = await this.advertisingApiService.getProductsBidsCompetitiveInCampaign(campaignId, {
+                            skus: sku,
+                        });
+
+                        const minBidsCpoQuery = await this.advertisingApiService.getMinBidSku({
+                            sku: [sku],
+                            paymentType: 'CPC',
+                        });
+
+                        const minBidsCpoTopQuery = await this.advertisingApiService.getMinBidSku({
+                            sku: [sku],
+                            paymentType: 'CPC_TOP',
+                        });
+
+                        minBidCpo = minBidsCpoQuery.minBids[0].bid ?? 0;
+                        minBidCpoTop = minBidsCpoTopQuery.minBids[0].bid ?? 0;
+                        competitiveBid = Math.floor(competitiveBidQuery.bids[0].bid / 1_000_000);
+                    }
 
                     const accumulator: AdvertisingAccumulator = {
                         campaignId: campaignId === '12950100' ? `${row.date}-12950100` : campaignId,
@@ -69,7 +115,11 @@ export class AdvertisingService {
                         clicks: parseNumber(row?.clicks),
                         toCart: parseNumber(row?.toCart),
                         avgBid: toDecimal(row?.avgBid),
+                        competitiveBid: toDecimal(competitiveBid),
+                        minBidCpo: toDecimal(minBidCpo),
+                        minBidCpoTop: toDecimal(minBidCpoTop),
                         moneySpent: toDecimal(row?.moneySpent),
+                        weeklyBudget: toDecimal(otherStats[0]?.weeklyBudget ?? 0),
                     };
 
                     if (campaignId === '12950100') {
@@ -95,19 +145,6 @@ export class AdvertisingService {
         }
 
         return result;
-    }
-
-    private createDto(accumulator: AdvertisingAccumulator): CreateAdvertisingDto {
-        return {
-            campaignId: accumulator.campaignId,
-            sku: accumulator.sku,
-            date: accumulator.date,
-            type: accumulator.type,
-            clicks: accumulator.clicks,
-            toCart: accumulator.toCart,
-            avgBid: accumulator.avgBid.toNumber(),
-            moneySpent: accumulator.moneySpent.toNumber(),
-        };
     }
 
     private createEntity(dto: CreateAdvertisingDto): AdvertisingEntity {

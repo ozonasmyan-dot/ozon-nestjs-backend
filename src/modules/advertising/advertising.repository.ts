@@ -29,6 +29,10 @@ export class AdvertisingRepository {
           clicks: item.clicks,
           toCart: item.toCart,
           avgBid: item.avgBid,
+          minBidCpo: item.minBidCpo,
+          minBidCpoTop: item.minBidCpoTop,
+          competitiveBid: item.competitiveBid,
+          weeklyBudget: item.weeklyBudget,
           moneySpent: item.moneySpent,
         },
         update: {
@@ -36,6 +40,10 @@ export class AdvertisingRepository {
           toCart: item.toCart,
           avgBid: item.avgBid,
           moneySpent: item.moneySpent,
+          minBidCpo: item.minBidCpo,
+          minBidCpoTop: item.minBidCpoTop,
+          competitiveBid: item.competitiveBid,
+          weeklyBudget: item.weeklyBudget,
         },
       }),
     );
