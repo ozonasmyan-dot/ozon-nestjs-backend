@@ -6,6 +6,7 @@ import {parseNumber} from '@/shared/utils/parse-number.utils';
 import {toDecimal} from '@/shared/utils/to-decimal.utils';
 import {AdvertisingRepository} from "@/modules/advertising/advertising.repository";
 import {AdvertisingEntity} from "@/modules/advertising/entities/advertising.entity";
+import {CreateAdvertisingDto} from "@/modules/advertising/dto/create-advertising.dto";
 
 type AdvertisingAccumulator = {
     campaignId: string;
@@ -32,11 +33,12 @@ export class AdvertisingService {
         const groupedCampaigns: Record<string, AdvertisingAccumulator> = {};
 
         const addEntity = async (accumulator: AdvertisingAccumulator) => {
-            const entity = this.createEntity(accumulator);
+            const dto = this.createDto(accumulator);
+            const entity = this.createEntity(dto);
 
             result.push(entity);
 
-            await this.advertisingRepository.upsertMany([entity]);
+            await this.advertisingRepository.upsertMany([dto]);
         };
 
         for (const date of dates) {
@@ -95,8 +97,8 @@ export class AdvertisingService {
         return result;
     }
 
-    private createEntity(accumulator: AdvertisingAccumulator): AdvertisingEntity {
-        return new AdvertisingEntity({
+    private createDto(accumulator: AdvertisingAccumulator): CreateAdvertisingDto {
+        return {
             campaignId: accumulator.campaignId,
             sku: accumulator.sku,
             date: accumulator.date,
@@ -105,6 +107,10 @@ export class AdvertisingService {
             toCart: accumulator.toCart,
             avgBid: accumulator.avgBid.toNumber(),
             moneySpent: accumulator.moneySpent.toNumber(),
-        });
+        };
+    }
+
+    private createEntity(dto: CreateAdvertisingDto): AdvertisingEntity {
+        return new AdvertisingEntity(dto);
     }
 }

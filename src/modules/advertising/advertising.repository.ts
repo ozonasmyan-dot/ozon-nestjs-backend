@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
-import { AdvertisingEntity } from './entities/advertising.entity';
+import { CreateAdvertisingDto } from './dto/create-advertising.dto';
 
 @Injectable()
 export class AdvertisingRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async upsertMany(items: AdvertisingEntity[]) {
+  async upsertMany(items: CreateAdvertisingDto[]) {
     if (!items.length) {
       return [];
     }
