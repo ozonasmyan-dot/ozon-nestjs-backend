@@ -95,17 +95,6 @@ export class TransactionApiService {
           })
         );
       }
-    } else {
-      results.push(
-        new TransactionEntity({
-          operationId: String(t.operation_id ?? ""),
-          name: t.operation_type,
-          date: baseDate,
-          postingNumber: t.posting?.posting_number,
-          price: Number(t.amount ?? 0),
-          sku: t.items[0]?.sku ?? ''
-        })
-      );
     }
 
     const saleCommission = Number(t.sale_commission ?? 0);

@@ -4,7 +4,6 @@ import Decimal from 'decimal.js';
 import {getDatesUntilToday} from '@/shared/utils/date.utils';
 import {AdvertisingRepository} from "@/modules/advertising/advertising.repository";
 import {AdvertisingEntity} from "@/modules/advertising/entities/advertising.entity";
-import dayjs from "dayjs";
 
 type AdvertisingAccumulator = {
     campaignId: string;
@@ -46,7 +45,6 @@ export class AdvertisingService {
     }
 
     async get(): Promise<AdvertisingEntity[]> {
-        const campaigns = await this.advertisingApiService.getCampaigns();
         const dates = getDatesUntilToday('2025-09-17');
         const buffer: AdvertisingEntity[] = [];
         const result: AdvertisingEntity[] = [];
@@ -117,8 +115,6 @@ export class AdvertisingService {
                     } else {
                         await addEntity(accumulator);
                     }
-
-                    console.log(accumulator);
                 }
             }
         }

@@ -6,6 +6,7 @@ import {AggregateUnitDto} from "./dto/aggregate-unit.dto";
 import {UnitEntity} from "./entities/unit.entity";
 import {buildOrderWhere} from "./utils/order-filter.utils";
 import {UnitFactory} from "./unit.factory";
+import dayjs from "dayjs";
 
 @Injectable()
 export class UnitService {
@@ -66,7 +67,7 @@ export class UnitService {
             return [
                 item.product,
                 item.postingNumber,
-                item.createdAt,
+                dayjs(item.createdAt).format("YYYY-MM"),
                 item.status,
                 item.margin,
                 item.costPrice,
