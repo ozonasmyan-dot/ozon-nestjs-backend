@@ -1,150 +1,219 @@
-import {Injectable} from '@nestjs/common';
+import {Injectable, Logger} from '@nestjs/common';
 import {AdvertisingApiService} from "@/api/performance/advertising.service";
-import Decimal from '@/shared/utils/decimal';
 import {getDatesUntilToday} from '@/shared/utils/date.utils';
 import {parseNumber} from '@/shared/utils/parse-number.utils';
 import {toDecimal} from '@/shared/utils/to-decimal.utils';
 import {AdvertisingRepository} from "@/modules/advertising/advertising.repository";
 import {AdvertisingEntity} from "@/modules/advertising/entities/advertising.entity";
 import {CreateAdvertisingDto} from "@/modules/advertising/dto/create-advertising.dto";
+import {AdvertisingAccumulator} from "@/modules/advertising/utils/advertising-accumulator";
+import {FilterAdvertisingDto} from "@/modules/advertising/dto/filter-advertising.dto";
 
-type AdvertisingAccumulator = {
-    campaignId: string;
-    sku: string;
-    date: string;
-    type: 'CPC' | 'CPO';
-    clicks: number;
-    toCart: number;
-    avgBid: Decimal;
-    moneySpent: Decimal;
-    competitiveBid: Decimal;
-    minBidCpo: Decimal;
-    minBidCpoTop: Decimal;
-    weeklyBudget: Decimal;
-};
+const SPECIAL_CAMPAIGN_ID = '12950100';
 
 @Injectable()
 export class AdvertisingService {
+    private readonly logger = new Logger(AdvertisingService.name);
+
     constructor(
         private readonly advertisingApiService: AdvertisingApiService,
         private readonly advertisingRepository: AdvertisingRepository,
     ) {
     }
 
+    async findMany(filters: FilterAdvertisingDto): Promise<AdvertisingEntity[]> {
+        const items = await this.advertisingRepository.findMany(filters);
+
+        return items.map((item) => new AdvertisingEntity(item));
+    }
+
     async get(): Promise<AdvertisingEntity[]> {
+        this.logger.log('Starting advertising statistics synchronization');
         const dates = getDatesUntilToday('2025-09-21');
+        this.logger.debug(`Resolved ${dates.length} dates to process`);
         const result: AdvertisingEntity[] = [];
         const groupedCampaigns: Record<string, AdvertisingAccumulator> = {};
 
-        const addEntity = async (accumulator: AdvertisingAccumulator) => {
-            const dto: CreateAdvertisingDto = {
-                campaignId: accumulator.campaignId,
-                sku: accumulator.sku,
-                date: accumulator.date,
-                type: accumulator.type,
-                clicks: accumulator.clicks,
-                toCart: accumulator.toCart,
-                minBidCpo: accumulator.minBidCpo.toNumber(),
-                minBidCpoTop: accumulator.minBidCpoTop.toNumber(),
-                competitiveBid: accumulator.competitiveBid.toNumber(),
-                weeklyBudget: accumulator.weeklyBudget.toNumber(),
-                avgBid: accumulator.avgBid.toNumber(),
-                moneySpent: accumulator.moneySpent.toNumber(),
-            };
-            const entity = this.createEntity(dto);
-
-            result.push(entity);
-
-            await this.advertisingRepository.upsertMany([dto]);
-        };
-
         for (const date of dates) {
-            const items = await this.advertisingApiService.getDailyStatistics({
-                dateFrom: date,
-                dateTo: date,
-            });
+            this.logger.log(`Processing statistics for date ${date}`);
+            const statistics = await this.fetchStatisticsForDate(date);
 
-            const statistics = await this.advertisingApiService.getStatistics({
-                campaigns: items.rows.map((i) => i.id),
-                groupBy: "DATE",
-                dateFrom: date,
-                dateTo: date,
-            });
+            await this.processCampaignStatistics(date, statistics, result, groupedCampaigns);
+        }
 
-            for (const [campaignId, campaign] of Object.entries(statistics ?? {})) {
-                const rows = (campaign as any)?.report?.rows ?? [];
+        this.logger.log(`Persisting grouped campaigns: ${Object.keys(groupedCampaigns).length} accumulators`);
+        await this.persistGroupedCampaigns(groupedCampaigns, result);
 
-                for (const row of rows) {
-                    const skuValue = campaignId === '12950100' ? row?.advSku : row?.sku;
-                    const sku = skuValue === undefined || skuValue === null ? '' : String(skuValue);
-                    let competitiveBid = 0;
-                    let minBidCpo = 0;
-                    let minBidCpoTop = 0;
+        this.logger.log(`Finished synchronization with ${result.length} advertising entities`);
+        return result;
+    }
 
-                    const otherStats = await this.advertisingApiService.getStatisticsExpense({
-                        campaignIds: campaignId,
-                        dateFrom: date,
-                        dateTo: date,
-                    });
+    private async fetchStatisticsForDate(date: string): Promise<Record<string, unknown>> {
+        this.logger.debug(`Fetching daily statistics for ${date}`);
+        const dailyStatistics = await this.advertisingApiService.getDailyStatistics({
+            dateFrom: date,
+            dateTo: date,
+        });
+        const campaignIds = dailyStatistics?.rows?.map((row) => row.id) ?? [];
 
-                    if (campaignId !== '12950100') {
-                        const competitiveBidQuery = await this.advertisingApiService.getProductsBidsCompetitiveInCampaign(campaignId, {
-                            skus: sku,
-                        });
+        this.logger.debug(`Daily statistics for ${date} returned ${campaignIds.length} campaigns`);
 
-                        const minBidsCpoQuery = await this.advertisingApiService.getMinBidSku({
-                            sku: [sku],
-                            paymentType: 'CPC',
-                        });
+        if (!campaignIds.length) {
+            this.logger.warn(`No campaign ids returned for ${date}`);
+            return {};
+        }
 
-                        const minBidsCpoTopQuery = await this.advertisingApiService.getMinBidSku({
-                            sku: [sku],
-                            paymentType: 'CPC_TOP',
-                        });
+        this.logger.debug(`Fetching grouped statistics for campaigns ${campaignIds.join(', ')} on ${date}`);
+        return (await this.advertisingApiService.getStatistics({
+            campaigns: campaignIds,
+            groupBy: 'DATE',
+            dateFrom: date,
+            dateTo: date,
+        })) ?? {};
+    }
 
-                        minBidCpo = minBidsCpoQuery.minBids[0].bid ?? 0;
-                        minBidCpoTop = minBidsCpoTopQuery.minBids[0].bid ?? 0;
-                        competitiveBid = Math.floor(competitiveBidQuery.bids[0].bid / 1_000_000);
-                    }
+    private async processCampaignStatistics(
+        date: string,
+        statistics: Record<string, unknown>,
+        result: AdvertisingEntity[],
+        groupedCampaigns: Record<string, AdvertisingAccumulator>,
+    ): Promise<void> {
+        for (const [campaignId, campaign] of Object.entries(statistics)) {
+            this.logger.debug(`Processing campaign ${campaignId} for date ${date}`);
+            const rows = (campaign as any)?.report?.rows ?? [];
 
-                    const accumulator: AdvertisingAccumulator = {
-                        campaignId: campaignId === '12950100' ? `${row.date}-12950100` : campaignId,
-                        sku,
-                        date: String(row?.date ?? ''),
-                        type: campaignId === '12950100' ? 'CPO' : 'CPC',
-                        clicks: parseNumber(row?.clicks),
-                        toCart: parseNumber(row?.toCart),
-                        avgBid: toDecimal(row?.avgBid),
-                        competitiveBid: toDecimal(competitiveBid),
-                        minBidCpo: toDecimal(minBidCpo),
-                        minBidCpoTop: toDecimal(minBidCpoTop),
-                        moneySpent: toDecimal(row?.moneySpent),
-                        weeklyBudget: toDecimal(otherStats[0]?.weeklyBudget ?? 0),
-                    };
+            for (const row of rows) {
+                const accumulator = await this.buildAccumulator(date, campaignId, row);
 
-                    if (campaignId === '12950100') {
-                        const key = `${accumulator.date}_${accumulator.sku}`;
-                        const existing = groupedCampaigns[key];
-
-                        if (existing) {
-                            existing.clicks += accumulator.clicks;
-                            existing.toCart += accumulator.toCart;
-                            existing.moneySpent = existing.moneySpent.plus(accumulator.moneySpent);
-                        } else {
-                            groupedCampaigns[key] = accumulator;
-                        }
-                    } else {
-                        await addEntity(accumulator);
-                    }
+                if (campaignId === SPECIAL_CAMPAIGN_ID) {
+                    this.logger.debug(`Adding row to grouped campaign ${accumulator.aggregationKey}`);
+                    this.addToGroupedCampaigns(groupedCampaigns, accumulator);
+                    continue;
                 }
+
+                this.logger.debug(`Persisting accumulator for campaign ${campaignId} and SKU ${accumulator.sku}`);
+                const entity = await this.persistAccumulator(accumulator);
+                result.push(entity);
             }
         }
+    }
 
-        for (const accumulator of Object.values(groupedCampaigns)) {
-            await addEntity(accumulator);
+    private async buildAccumulator(date: string, campaignId: string, row: any): Promise<AdvertisingAccumulator> {
+        const sku = this.resolveSku(campaignId, row);
+        this.logger.debug(`Building accumulator for campaign ${campaignId}, date ${date}, sku ${sku}`);
+
+        let competitiveBid = 0;
+        let minBidCpo = 0;
+        let minBidCpoTop = 0;
+        let expenseStatistics = 0;
+
+        if (campaignId !== SPECIAL_CAMPAIGN_ID) {
+            const expenseStatisticsQuery = await this.advertisingApiService.getStatisticsExpense({
+                campaignIds: campaignId,
+                dateFrom: date,
+                dateTo: date,
+            });
+
+            this.logger.debug(`Fetching bid information for campaign ${campaignId} and sku ${sku}`);
+            const competitiveBidQuery = await this.advertisingApiService.getProductsBidsCompetitiveInCampaign(campaignId, {
+                skus: sku,
+            });
+
+            const minBidsCpoQuery = await this.advertisingApiService.getMinBidSku({
+                sku: [sku],
+                paymentType: 'CPC',
+            });
+
+            const minBidsCpoTopQuery = await this.advertisingApiService.getMinBidSku({
+                sku: [sku],
+                paymentType: 'CPC_TOP',
+            });
+
+            const competitiveBidValue = competitiveBidQuery?.bids?.[0]?.bid ?? 0;
+            const minBidCpoValue = minBidsCpoQuery?.minBids?.[0]?.bid ?? 0;
+            const minBidCpoTopValue = minBidsCpoTopQuery?.minBids?.[0]?.bid ?? 0;
+
+            minBidCpo = minBidCpoValue;
+            minBidCpoTop = minBidCpoTopValue;
+            competitiveBid = Math.floor(competitiveBidValue / 1_000_000);
+            expenseStatistics = expenseStatisticsQuery?.rows[0]?.weeklyBudget ?? 0
         }
 
-        return result;
+        const resolvedDate = this.resolveDate(row);
+        this.logger.debug(`Accumulator resolved date ${resolvedDate} for campaign ${campaignId}`);
+
+        return new AdvertisingAccumulator({
+            campaignId: campaignId === SPECIAL_CAMPAIGN_ID ? `${resolvedDate}-${SPECIAL_CAMPAIGN_ID}` : campaignId,
+            sku,
+            date: resolvedDate,
+            type: campaignId === SPECIAL_CAMPAIGN_ID ? 'CPO' : 'CPC',
+            clicks: parseNumber(row?.clicks),
+            toCart: parseNumber(row?.toCart),
+            avgBid: toDecimal(row?.avgBid),
+            competitiveBid: toDecimal(competitiveBid),
+            minBidCpo: toDecimal(minBidCpo),
+            minBidCpoTop: toDecimal(minBidCpoTop),
+            moneySpent: toDecimal(row?.moneySpent),
+            weeklyBudget: toDecimal(expenseStatistics),
+        });
+    }
+
+    private resolveSku(campaignId: string, row: any): string {
+        const skuValue = campaignId === SPECIAL_CAMPAIGN_ID ? row?.advSku : row?.sku;
+
+        if (skuValue === undefined || skuValue === null) {
+            return '';
+        }
+
+        return String(skuValue);
+    }
+
+    private resolveDate(row: any): string {
+        const dateValue = row?.date;
+
+        if (dateValue === undefined || dateValue === null) {
+            return '';
+        }
+
+        return String(dateValue);
+    }
+
+    private addToGroupedCampaigns(
+        groupedCampaigns: Record<string, AdvertisingAccumulator>,
+        accumulator: AdvertisingAccumulator,
+    ): void {
+        const key = accumulator.aggregationKey;
+        const existing = groupedCampaigns[key];
+
+        if (existing) {
+            this.logger.debug(`Merging accumulator into existing grouped campaign ${key}`);
+            existing.mergeWith(accumulator);
+            return;
+        }
+
+        this.logger.debug(`Creating new grouped accumulator ${key}`);
+        groupedCampaigns[key] = accumulator;
+    }
+
+    private async persistGroupedCampaigns(
+        groupedCampaigns: Record<string, AdvertisingAccumulator>,
+        result: AdvertisingEntity[],
+    ): Promise<void> {
+        for (const accumulator of Object.values(groupedCampaigns)) {
+            this.logger.debug(`Persisting grouped accumulator ${accumulator.aggregationKey}`);
+            const entity = await this.persistAccumulator(accumulator);
+            result.push(entity);
+        }
+    }
+
+    private async persistAccumulator(accumulator: AdvertisingAccumulator): Promise<AdvertisingEntity> {
+        this.logger.debug(`Upserting advertising data for campaign ${accumulator.campaignId} and sku ${accumulator.sku}`);
+        const dto = accumulator.toDto();
+        const entity = this.createEntity(dto);
+
+        await this.advertisingRepository.upsertMany([dto]);
+
+        return entity;
     }
 
     private createEntity(dto: CreateAdvertisingDto): AdvertisingEntity {
