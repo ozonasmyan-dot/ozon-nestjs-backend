@@ -6,7 +6,7 @@ import {AggregateUnitDto} from "./dto/aggregate-unit.dto";
 import {UnitEntity} from "./entities/unit.entity";
 import {buildOrderWhere} from "./utils/order-filter.utils";
 import {UnitFactory} from "./unit.factory";
-import dayjs from "dayjs";
+import dayjs, { Dayjs } from "dayjs";
 import Decimal from "@/shared/utils/decimal";
 import {
     AdvertisingDateRange,
@@ -115,7 +115,11 @@ export class UnitService {
                 continue;
             }
 
-            const monthKey = dayjs(expense.date).format("YYYY-MM");
+            const monthKey = this.resolveAdvertisingMonth(expense.date);
+
+            if (!monthKey) {
+                continue;
+            }
             const key = `${expense.sku}-${monthKey}`;
             const current = totals.get(key) ?? new Decimal(0);
             totals.set(key, current.plus(expense.moneySpent));
@@ -185,5 +189,53 @@ export class UnitService {
             dateFrom: start.format("YYYY-MM-DD"),
             dateTo: end.format("YYYY-MM-DD"),
         };
+    }
+
+    private resolveAdvertisingMonth(date: string | null | undefined): string | undefined {
+        const parsed = this.parseAdvertisingDate(date);
+
+        if (!parsed) {
+            return undefined;
+        }
+
+        return parsed.format("YYYY-MM");
+    }
+
+    private parseAdvertisingDate(value: string | null | undefined): Dayjs | undefined {
+        if (!value) {
+            return undefined;
+        }
+
+        const direct = dayjs(value);
+
+        if (direct.isValid()) {
+            return direct;
+        }
+
+        const normalized = this.normalizeDotSeparatedDate(value);
+
+        if (normalized) {
+            const parsed = dayjs(normalized);
+
+            if (parsed.isValid()) {
+                return parsed;
+            }
+        }
+
+        return undefined;
+    }
+
+    private normalizeDotSeparatedDate(value: string): string | undefined {
+        const match = value.trim().match(/^(\d{1,2})[.](\d{1,2})[.](\d{2,4})$/);
+
+        if (!match) {
+            return undefined;
+        }
+
+        const [, day, month, year] = match;
+
+        const normalizedYear = year.length === 2 ? `20${year}` : year;
+
+        return `${normalizedYear.padStart(4, "0")}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
     }
 }

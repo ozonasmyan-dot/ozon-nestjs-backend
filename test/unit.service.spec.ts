@@ -63,6 +63,18 @@ describe("UnitService", () => {
     }
   });
 
+  it("parses dot separated advertising dates", async () => {
+    findBySkuAndDateRanges.mockResolvedValueOnce([
+      { sku: "1828048543", date: "05.01.2024", moneySpent: 20 },
+    ]);
+
+    const items = await service.aggregate({});
+
+    for (const item of items) {
+      expect(item.advertisingExpense).toBeCloseTo(20, 2);
+    }
+  });
+
   it("returns csv representation of units with advertising expense", async () => {
     const csv = await service.aggregateCsv({});
     const lines = csv.trim().split("\n");

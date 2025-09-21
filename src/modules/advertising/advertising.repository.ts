@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import dayjs from 'dayjs';
 import { PrismaService } from '@/prisma/prisma.service';
 import { CreateAdvertisingDto } from './dto/create-advertising.dto';
 
@@ -100,14 +101,48 @@ export class AdvertisingRepository {
       return [];
     }
 
+    const orFilters: Prisma.AdvertisingWhereInput[] = [];
+
+    for (const { sku, dateFrom, dateTo } of ranges) {
+      if (!sku) {
+        continue;
+      }
+
+      const dateFilters: Prisma.AdvertisingWhereInput[] = [];
+
+      if (dateFrom && dateTo) {
+        dateFilters.push({
+          date: {
+            gte: dateFrom,
+            lt: dateTo,
+          },
+        });
+      }
+
+      const tokens = this.buildMonthTokens(dateFrom);
+      for (const token of tokens) {
+        dateFilters.push({
+          date: {
+            contains: token,
+          },
+        });
+      }
+
+      if (!dateFilters.length) {
+        continue;
+      }
+
+      orFilters.push({
+        AND: [{ sku }, { OR: dateFilters }],
+      });
+    }
+
+    if (!orFilters.length) {
+      return [];
+    }
+
     const where: Prisma.AdvertisingWhereInput = {
-      OR: ranges.map(({ sku, dateFrom, dateTo }) => ({
-        sku,
-        date: {
-          gte: dateFrom,
-          lt: dateTo,
-        },
-      })),
+      OR: orFilters,
     };
 
     return this.prisma.advertising.findMany({
@@ -118,5 +153,23 @@ export class AdvertisingRepository {
         moneySpent: true,
       },
     });
+  }
+
+  private buildMonthTokens(dateFrom?: string): string[] {
+    if (!dateFrom) {
+      return [];
+    }
+
+    const parsed = dayjs(dateFrom);
+
+    if (!parsed.isValid()) {
+      return [];
+    }
+
+    const tokens = new Set<string>();
+    tokens.add(parsed.format('YYYY-MM'));
+    tokens.add(parsed.format('MM.YYYY'));
+
+    return Array.from(tokens).filter(Boolean);
   }
 }
