@@ -14,18 +14,25 @@ export class UnitEntity extends OrderEntity {
   costPrice: number;
   totalServices: number;
   margin: number;
+  advertisingExpense: number;
   private statusOzon: OzonStatus | string;
 
   constructor(partial: Partial<UnitEntity>) {
     super(partial);
     Object.assign(this, partial);
     this.statusOzon = (partial.status as OzonStatus) ?? "";
+    this.advertisingExpense = toDecimalUtils(partial.advertisingExpense)
+      .toDecimalPlaces(2)
+      .toNumber();
     const services = this.buildServices();
     const economy = this.calculateEconomy(services);
     this.status = economy.status;
     this.costPrice = economy.costPrice;
     this.totalServices = economy.totalServices;
-    this.margin = economy.margin;
+    this.margin = toDecimalUtils(economy.margin)
+      .minus(this.advertisingExpense)
+      .toDecimalPlaces(2)
+      .toNumber();
   }
 
   private buildServices(): Service[] {
