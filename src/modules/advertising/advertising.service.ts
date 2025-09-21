@@ -1,7 +1,9 @@
 import {Injectable} from '@nestjs/common';
 import {AdvertisingApiService} from "@/api/performance/advertising.service";
-import Decimal from 'decimal.js';
+import Decimal from '@/shared/utils/decimal';
 import {getDatesUntilToday} from '@/shared/utils/date.utils';
+import {parseNumber} from '@/shared/utils/parse-number.utils';
+import {toDecimal} from '@/shared/utils/to-decimal.utils';
 import {AdvertisingRepository} from "@/modules/advertising/advertising.repository";
 import {AdvertisingEntity} from "@/modules/advertising/entities/advertising.entity";
 
@@ -16,26 +18,6 @@ type AdvertisingAccumulator = {
     moneySpent: Decimal;
 };
 
-const BATCH_SIZE = 100;
-
-const toDecimal = (value: string | number | null | undefined): Decimal => {
-    if (value === null || value === undefined) {
-        return new Decimal(0);
-    }
-
-    if (typeof value === 'number') {
-        return new Decimal(value);
-    }
-
-    const normalized = value.replace(',', '.').trim();
-    return new Decimal(normalized.length ? normalized : '0');
-};
-
-const parseNumber = (value: unknown): number => {
-    const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : 0;
-};
-
 @Injectable()
 export class AdvertisingService {
     constructor(
@@ -46,28 +28,15 @@ export class AdvertisingService {
 
     async get(): Promise<AdvertisingEntity[]> {
         const dates = getDatesUntilToday('2025-09-17');
-        const buffer: AdvertisingEntity[] = [];
         const result: AdvertisingEntity[] = [];
         const groupedCampaigns: Record<string, AdvertisingAccumulator> = {};
-
-        const flush = async () => {
-            if (!buffer.length) {
-                return;
-            }
-
-            const batch = buffer.splice(0);
-            await this.advertisingRepository.upsertMany(batch);
-        };
 
         const addEntity = async (accumulator: AdvertisingAccumulator) => {
             const entity = this.createEntity(accumulator);
 
-            buffer.push(entity);
             result.push(entity);
 
-            if (buffer.length >= BATCH_SIZE) {
-                await flush();
-            }
+            await this.advertisingRepository.upsertMany([entity]);
         };
 
         for (const date of dates) {
@@ -122,8 +91,6 @@ export class AdvertisingService {
         for (const accumulator of Object.values(groupedCampaigns)) {
             await addEntity(accumulator);
         }
-
-        await flush();
 
         return result;
     }
