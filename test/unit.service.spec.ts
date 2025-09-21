@@ -51,7 +51,7 @@ describe("UnitService", () => {
     );
   });
 
-  it("passes monthly advertising expenses to the factory", async () => {
+  it("passes per-order monthly advertising expenses to the factory", async () => {
     const spy = jest.spyOn(unitFactory, "createUnit");
     await service.aggregate({});
     expect(findBySkuAndDateRanges).toHaveBeenCalledWith([
@@ -59,7 +59,7 @@ describe("UnitService", () => {
     ]);
     expect(spy).toHaveBeenCalledTimes(orders.length);
     for (const call of spy.mock.calls) {
-      expect(call[2]).toBeCloseTo(20, 2);
+      expect(call[2]).toBeCloseTo(2.5, 2);
     }
   });
 
@@ -71,7 +71,7 @@ describe("UnitService", () => {
     const items = await service.aggregate({});
 
     for (const item of items) {
-      expect(item.advertisingExpense).toBeCloseTo(20, 2);
+      expect(item.advertisingExpense).toBeCloseTo(2.5, 2);
     }
   });
 
@@ -83,6 +83,6 @@ describe("UnitService", () => {
     );
     expect(lines.length).toBe(orders.length + 1);
     const firstRow = lines[1].split(",");
-    expect(firstRow[firstRow.length - 1]).toBe("20");
+    expect(Number(firstRow[firstRow.length - 1])).toBeCloseTo(2.5, 2);
   });
 });

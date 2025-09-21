@@ -102,6 +102,7 @@ export class UnitService {
         }
 
         const ranges = this.buildAdvertisingRanges(orders);
+        const orderCounts = this.countOrdersByAdvertisingKey(orders);
 
         if (!ranges.length) {
             return new Map<string, number>();
@@ -127,10 +128,33 @@ export class UnitService {
 
         const result = new Map<string, number>();
         for (const [key, value] of totals.entries()) {
-            result.set(key, value.toDecimalPlaces(2).toNumber());
+            const count = orderCounts.get(key);
+
+            if (!count || count <= 0) {
+                continue;
+            }
+
+            const perOrder = value.dividedBy(count);
+            result.set(key, perOrder.toDecimalPlaces(2).toNumber());
         }
 
         return result;
+    }
+
+    private countOrdersByAdvertisingKey(orders: OrderEntity[]): Map<string, number> {
+        const counts = new Map<string, number>();
+
+        for (const order of orders) {
+            const key = this.buildAdvertisingKey(order);
+
+            if (!key) {
+                continue;
+            }
+
+            counts.set(key, (counts.get(key) ?? 0) + 1);
+        }
+
+        return counts;
     }
 
     private buildAdvertisingRanges(orders: OrderEntity[]): AdvertisingDateRange[] {
