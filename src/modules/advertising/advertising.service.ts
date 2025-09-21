@@ -16,8 +16,6 @@ type AdvertisingAccumulator = {
     moneySpent: Decimal;
 };
 
-const BATCH_SIZE = 100;
-
 const toDecimal = (value: string | number | null | undefined): Decimal => {
     if (value === null || value === undefined) {
         return new Decimal(0);
@@ -46,28 +44,15 @@ export class AdvertisingService {
 
     async get(): Promise<AdvertisingEntity[]> {
         const dates = getDatesUntilToday('2025-09-17');
-        const buffer: AdvertisingEntity[] = [];
         const result: AdvertisingEntity[] = [];
         const groupedCampaigns: Record<string, AdvertisingAccumulator> = {};
-
-        const flush = async () => {
-            if (!buffer.length) {
-                return;
-            }
-
-            const batch = buffer.splice(0);
-            await this.advertisingRepository.upsertMany(batch);
-        };
 
         const addEntity = async (accumulator: AdvertisingAccumulator) => {
             const entity = this.createEntity(accumulator);
 
-            buffer.push(entity);
             result.push(entity);
 
-            if (buffer.length >= BATCH_SIZE) {
-                await flush();
-            }
+            await this.advertisingRepository.upsertMany([entity]);
         };
 
         for (const date of dates) {
@@ -122,8 +107,6 @@ export class AdvertisingService {
         for (const accumulator of Object.values(groupedCampaigns)) {
             await addEntity(accumulator);
         }
-
-        await flush();
 
         return result;
     }
