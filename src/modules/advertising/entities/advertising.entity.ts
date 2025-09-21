@@ -12,6 +12,10 @@ export class AdvertisingEntity implements Advertising {
   toCart: number;
   avgBid: number;
   moneySpent: number;
+  minBidCpo: number;
+  minBidCpoTop: number;
+  competitiveBid: number;
+  weeklyBudget: number;
   createdAt: Date;
 
   constructor(partial: AdvertisingConstructor) {
