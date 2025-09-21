@@ -5,8 +5,8 @@ import {AdvertisingService} from "@/modules/advertising/advertising.service";
 export class AdvertisingController {
   constructor(private readonly advertisingService: AdvertisingService) {}
 
-  @Get('list')
-  list() {
+  @Get('sync')
+  sync() {
     return this.advertisingService.get();
   }
 }
