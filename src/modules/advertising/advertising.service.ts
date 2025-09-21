@@ -7,6 +7,7 @@ import {AdvertisingRepository} from "@/modules/advertising/advertising.repositor
 import {AdvertisingEntity} from "@/modules/advertising/entities/advertising.entity";
 import {CreateAdvertisingDto} from "@/modules/advertising/dto/create-advertising.dto";
 import {AdvertisingAccumulator} from "@/modules/advertising/utils/advertising-accumulator";
+import {FilterAdvertisingDto} from "@/modules/advertising/dto/filter-advertising.dto";
 
 const SPECIAL_CAMPAIGN_ID = '12950100';
 
@@ -18,6 +19,12 @@ export class AdvertisingService {
         private readonly advertisingApiService: AdvertisingApiService,
         private readonly advertisingRepository: AdvertisingRepository,
     ) {
+    }
+
+    async findMany(filters: FilterAdvertisingDto): Promise<AdvertisingEntity[]> {
+        const items = await this.advertisingRepository.findMany(filters);
+
+        return items.map((item) => new AdvertisingEntity(item));
     }
 
     async get(): Promise<AdvertisingEntity[]> {
