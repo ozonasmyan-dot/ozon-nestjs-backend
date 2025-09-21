@@ -101,17 +101,19 @@ export class AdvertisingService {
     private async buildAccumulator(date: string, campaignId: string, row: any): Promise<AdvertisingAccumulator> {
         const sku = this.resolveSku(campaignId, row);
         this.logger.debug(`Building accumulator for campaign ${campaignId}, date ${date}, sku ${sku}`);
-        const expenseStatistics = await this.advertisingApiService.getStatisticsExpense({
-            campaignIds: campaignId,
-            dateFrom: date,
-            dateTo: date,
-        });
 
         let competitiveBid = 0;
         let minBidCpo = 0;
         let minBidCpoTop = 0;
+        let expenseStatistics = 0;
 
         if (campaignId !== SPECIAL_CAMPAIGN_ID) {
+            const expenseStatisticsQuery = await this.advertisingApiService.getStatisticsExpense({
+                campaignIds: campaignId,
+                dateFrom: date,
+                dateTo: date,
+            });
+
             this.logger.debug(`Fetching bid information for campaign ${campaignId} and sku ${sku}`);
             const competitiveBidQuery = await this.advertisingApiService.getProductsBidsCompetitiveInCampaign(campaignId, {
                 skus: sku,
@@ -134,6 +136,7 @@ export class AdvertisingService {
             minBidCpo = minBidCpoValue;
             minBidCpoTop = minBidCpoTopValue;
             competitiveBid = Math.floor(competitiveBidValue / 1_000_000);
+            expenseStatistics = expenseStatisticsQuery?.rows[0]?.weeklyBudget ?? 0
         }
 
         const resolvedDate = this.resolveDate(row);
@@ -151,7 +154,7 @@ export class AdvertisingService {
             minBidCpo: toDecimal(minBidCpo),
             minBidCpoTop: toDecimal(minBidCpoTop),
             moneySpent: toDecimal(row?.moneySpent),
-            weeklyBudget: toDecimal(expenseStatistics?.[0]?.weeklyBudget ?? 0),
+            weeklyBudget: toDecimal(expenseStatistics),
         });
     }
 
