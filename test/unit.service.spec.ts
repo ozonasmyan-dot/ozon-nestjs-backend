@@ -3,14 +3,16 @@ import { OrderRepository } from "@/modules/order/order.repository";
 import { TransactionRepository } from "@/modules/transaction/transaction.repository";
 import { UnitFactory } from "@/modules/unit/unit.factory";
 import ordersFixture from "@/shared/data/orders.fixture";
+import { AdvertisingRepository } from "@/modules/advertising/advertising.repository";
 
 describe("UnitService", () => {
   let service: UnitService;
   let orders: any[];
   let transactions: any[];
   let unitFactory: UnitFactory;
+  let findBySkuAndDateRanges: jest.Mock;
 
-  beforeAll(() => {
+  beforeEach(() => {
     orders = ordersFixture.map((o) => ({
       ...o,
       createdAt: new Date(o.createdAt),
@@ -33,33 +35,42 @@ describe("UnitService", () => {
           ),
         ),
     } as unknown as TransactionRepository;
+    findBySkuAndDateRanges = jest.fn().mockResolvedValue([
+      { sku: "1828048543", date: "2024-01-05", moneySpent: 12.34 },
+      { sku: "1828048543", date: "2024-01-15", moneySpent: 7.66 },
+    ]);
+    const advertisingRepository = {
+      findBySkuAndDateRanges,
+    } as unknown as AdvertisingRepository;
     unitFactory = new UnitFactory();
     service = new UnitService(
       orderRepository,
       transactionRepository,
       unitFactory,
+      advertisingRepository,
     );
   });
 
-  it("sums price and costPrice only for delivered items", async () => {
-    const result = await service.aggregate({});
-    expect(result.totals[0].price).toBe(1000);
-    expect(result.totals[0].costPrice).toBe(771);
+  it("passes monthly advertising expenses to the factory", async () => {
+    const spy = jest.spyOn(unitFactory, "createUnit");
+    await service.aggregate({});
+    expect(findBySkuAndDateRanges).toHaveBeenCalledWith([
+      { sku: "1828048543", dateFrom: "2024-01-01", dateTo: "2024-02-01" },
+    ]);
+    expect(spy).toHaveBeenCalledTimes(orders.length);
+    for (const call of spy.mock.calls) {
+      expect(call[2]).toBeCloseTo(20, 2);
+    }
   });
 
-  it("returns csv representation of units", async () => {
+  it("returns csv representation of units with advertising expense", async () => {
     const csv = await service.aggregateCsv({});
     const lines = csv.trim().split("\n");
     expect(lines[0]).toBe(
-      "orderNumber,postingNumber,sku,status,price,costPrice,margin,transactionTotal,transactions",
+      "product,postingNumber,createdAt,status,margin,costPrice,transactionTotal,price,advertisingExpense",
     );
     expect(lines.length).toBe(orders.length + 1);
-    expect(csv).toContain("t2:-400");
-  });
-
-  it("uses UnitFactory to create units", async () => {
-    const spy = jest.spyOn(unitFactory, "createUnit");
-    await service.aggregate({});
-    expect(spy).toHaveBeenCalledTimes(orders.length);
+    const firstRow = lines[1].split(",");
+    expect(firstRow[firstRow.length - 1]).toBe("20");
   });
 });

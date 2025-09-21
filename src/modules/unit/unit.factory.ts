@@ -6,7 +6,11 @@ import { OrderEntity } from '@/modules/order/entities/order.entity';
 
 @Injectable()
 export class UnitFactory {
-  createUnit(order: OrderEntity, transactions: Transaction[]): UnitEntity {
+  createUnit(
+    order: OrderEntity,
+    transactions: Transaction[],
+    advertisingExpense = 0,
+  ): UnitEntity {
     const uniqueTxs = [
       ...new Map(transactions.map((t) => [t.id, t])).values(),
     ];
@@ -17,6 +21,7 @@ export class UnitFactory {
       ...order,
       transactionTotal,
       transactions: uniqueTxs,
+      advertisingExpense,
     });
   }
 }

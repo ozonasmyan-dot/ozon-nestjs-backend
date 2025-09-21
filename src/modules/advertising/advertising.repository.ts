@@ -9,6 +9,12 @@ interface AdvertisingFilterParams {
   dateTo?: string;
 }
 
+export interface AdvertisingDateRange {
+  sku: string;
+  dateFrom: string;
+  dateTo: string;
+}
+
 @Injectable()
 export class AdvertisingRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -87,5 +93,30 @@ export class AdvertisingRepository {
     );
 
     return this.prisma.$transaction(operations);
+  }
+
+  async findBySkuAndDateRanges(ranges: AdvertisingDateRange[]) {
+    if (!ranges.length) {
+      return [];
+    }
+
+    const where: Prisma.AdvertisingWhereInput = {
+      OR: ranges.map(({ sku, dateFrom, dateTo }) => ({
+        sku,
+        date: {
+          gte: dateFrom,
+          lt: dateTo,
+        },
+      })),
+    };
+
+    return this.prisma.advertising.findMany({
+      where,
+      select: {
+        sku: true,
+        date: true,
+        moneySpent: true,
+      },
+    });
   }
 }
