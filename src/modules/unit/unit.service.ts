@@ -60,7 +60,7 @@ export class UnitService {
             "status",
             "margin",
             "costPrice",
-            "transactionTotal",
+            "totalServices",
             "price"
         ];
         const rows = items.map((item) => {
@@ -71,7 +71,7 @@ export class UnitService {
                 item.status,
                 item.margin,
                 item.costPrice,
-                item.transactionTotal,
+                item.totalServices,
                 item.price,
             ].join(",");
         });
