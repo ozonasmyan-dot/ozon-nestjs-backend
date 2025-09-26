@@ -6,7 +6,6 @@ import {AggregateUnitDto} from "./dto/aggregate-unit.dto";
 import {UnitEntity} from "./entities/unit.entity";
 import {buildOrderWhere} from "./utils/order-filter.utils";
 import {UnitFactory} from "./unit.factory";
-import dayjs from "dayjs";
 
 @Injectable()
 export class UnitService {
@@ -51,30 +50,4 @@ export class UnitService {
             : items;
     }
 
-    async aggregateCsv(dto: AggregateUnitDto): Promise<string> {
-        const items = await this.aggregate(dto);
-        const header = [
-            "product",
-            "postingNumber",
-            "createdAt",
-            "status",
-            "margin",
-            "costPrice",
-            "totalServices",
-            "price"
-        ];
-        const rows = items.map((item) => {
-            return [
-                item.product,
-                item.postingNumber,
-                dayjs(item.createdAt).format("YYYY-MM"),
-                item.status,
-                item.margin,
-                item.costPrice,
-                item.totalServices,
-                item.price,
-            ].join(",");
-        });
-        return [header.join(","), ...rows].join("\n");
-    }
 }

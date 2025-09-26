@@ -6,11 +6,12 @@ import {PerformanceApiModule} from "@/api/performance/performance.module";
 import {AdvertisingService} from "@/modules/advertising/advertising.service";
 import {AdvertisingRepository} from "@/modules/advertising/advertising.repository";
 import {CpoParserService} from "@/modules/advertising/services/cpo-parser.service";
+import {AdvertisingCsvService} from "@/modules/advertising/services/advertising-csv.service";
 
 @Module({
     imports: [PrismaModule, PerformanceApiModule],
     controllers: [AdvertisingController],
-    providers: [AdvertisingApiService, AdvertisingService, AdvertisingRepository, CpoParserService],
+    providers: [AdvertisingApiService, AdvertisingService, AdvertisingRepository, CpoParserService, AdvertisingCsvService],
 })
 export class AdvertisingModule {
 }
