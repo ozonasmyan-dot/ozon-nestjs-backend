@@ -82,7 +82,10 @@ export class AdvertisingService {
 
     async get(): Promise<AdvertisingEntity[]> {
         this.logger.log('Starting advertising statistics synchronization');
-        const dates = getDatesUntilToday('2025-09-21');
+        const latestDate = await this.advertisingRepository.findLatestDate();
+        const startDate = latestDate ?? '2025-09-01';
+        this.logger.debug(`Resolved start date for synchronization: ${startDate}`);
+        const dates = getDatesUntilToday(startDate);
         this.logger.debug(`Resolved ${dates.length} dates to process`);
         const result: AdvertisingEntity[] = [];
         const groupedCampaigns: Record<string, AdvertisingAccumulator> = {};
