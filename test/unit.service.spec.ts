@@ -51,7 +51,7 @@ describe("UnitService", () => {
     const csv = await service.aggregateCsv({});
     const lines = csv.trim().split("\n");
     expect(lines[0]).toBe(
-      "orderNumber,postingNumber,sku,status,price,costPrice,margin,transactionTotal,transactions",
+      "orderNumber,postingNumber,sku,status,price,costPrice,margin,totalServices,transactions",
     );
     expect(lines.length).toBe(orders.length + 1);
     expect(csv).toContain("t2:-400");

@@ -9,7 +9,6 @@ import { OzonStatus } from '../ts/ozon-status.enum';
 import { toDecimalUtils } from '@/shared/utils/to-decimal.utils';
 
 export class UnitEntity extends OrderEntity {
-  transactionTotal: number;
   transactions: Transaction[];
   costPrice: number;
   totalServices: number;
