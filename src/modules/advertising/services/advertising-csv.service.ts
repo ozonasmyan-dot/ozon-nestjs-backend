@@ -9,7 +9,6 @@ export class AdvertisingCsvService {
     async findManyCsv(filters: FilterAdvertisingDto): Promise<string> {
         const items = await this.advertisingService.findMany(filters);
         const header = [
-            'id',
             'campaignId',
             'sku',
             'date',
@@ -22,12 +21,10 @@ export class AdvertisingCsvService {
             'minBidCpoTop',
             'competitiveBid',
             'weeklyBudget',
-            'createdAt',
         ];
 
         const rows = items.map((item) =>
             [
-                item.id,
                 item.campaignId,
                 item.sku,
                 item.date,
@@ -40,13 +37,8 @@ export class AdvertisingCsvService {
                 item.minBidCpoTop,
                 item.competitiveBid,
                 item.weeklyBudget,
-                item.createdAt,
             ]
                 .map((value) => {
-                    if (value instanceof Date) {
-                        return value.toISOString();
-                    }
-
                     if (value === undefined || value === null) {
                         return '';
                     }
