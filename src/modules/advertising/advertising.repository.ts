@@ -88,4 +88,18 @@ export class AdvertisingRepository {
 
     return this.prisma.$transaction(operations);
   }
+
+  async sumMoneySpentByDateRange(dateFrom: string, dateTo: string): Promise<number> {
+    const { _sum } = await this.prisma.advertising.aggregate({
+      _sum: { moneySpent: true },
+      where: {
+        date: {
+          gte: dateFrom,
+          lte: dateTo,
+        },
+      },
+    });
+
+    return _sum.moneySpent ?? 0;
+  }
 }

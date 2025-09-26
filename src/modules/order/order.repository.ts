@@ -15,6 +15,17 @@ export class OrderRepository {
     return this.prisma.order.findMany({ where });
   }
 
+  countByCreatedAtRange(from: Date, to: Date): Promise<number> {
+    return this.prisma.order.count({
+      where: {
+        createdAt: {
+          gte: from,
+          lte: to,
+        },
+      },
+    });
+  }
+
   upsert(data: CreateOrderDto): Promise<Order> {
     return this.prisma.order.upsert({
       where: { postingNumber: data.postingNumber },
