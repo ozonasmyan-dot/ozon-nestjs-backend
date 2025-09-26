@@ -88,4 +88,17 @@ export class AdvertisingRepository {
 
     return this.prisma.$transaction(operations);
   }
+
+  async findLatestDate(): Promise<string | null> {
+    const latest = await this.prisma.advertising.findFirst({
+      select: {
+        date: true,
+      },
+      orderBy: {
+        date: 'desc',
+      },
+    });
+
+    return latest?.date ?? null;
+  }
 }

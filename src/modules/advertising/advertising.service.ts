@@ -82,7 +82,10 @@ export class AdvertisingService {
 
     async get(): Promise<AdvertisingEntity[]> {
         this.logger.log('Starting advertising statistics synchronization');
-        const dates = getDatesUntilToday('2025-09-21');
+        const latestDate = await this.advertisingRepository.findLatestDate();
+        const startDate = this.resolveStartDate(latestDate);
+        this.logger.debug(`Resolved start date for synchronization: ${startDate}`);
+        const dates = getDatesUntilToday(startDate);
         this.logger.debug(`Resolved ${dates.length} dates to process`);
         const result: AdvertisingEntity[] = [];
         const groupedCampaigns: Record<string, AdvertisingAccumulator> = {};
@@ -99,6 +102,39 @@ export class AdvertisingService {
 
         this.logger.log(`Finished synchronization with ${result.length} advertising entities`);
         return result;
+    }
+
+    private resolveStartDate(latestDate: string | null): string {
+        const defaultStartDate = '2025-09-01';
+
+        if (!latestDate) {
+            this.logger.debug(`No advertising records found, using default start date ${defaultStartDate}`);
+            return defaultStartDate;
+        }
+
+        const trimmedDate = latestDate.trim();
+
+        if (/^\d{4}-\d{2}-\d{2}$/.test(trimmedDate)) {
+            return trimmedDate;
+        }
+
+        if (/^\d{2}\.\d{2}\.\d{4}$/.test(trimmedDate)) {
+            const [day, month, year] = trimmedDate.split('.');
+            const normalizedDate = `${year}-${month}-${day}`;
+            this.logger.debug(`Normalized stored advertising date ${trimmedDate} to ${normalizedDate}`);
+            return normalizedDate;
+        }
+
+        const parsedDate = new Date(trimmedDate);
+
+        if (!Number.isNaN(parsedDate.getTime())) {
+            const normalizedDate = parsedDate.toISOString().slice(0, 10);
+            this.logger.debug(`Parsed advertising date ${trimmedDate} to ${normalizedDate} using Date constructor`);
+            return normalizedDate;
+        }
+
+        this.logger.warn(`Unable to parse advertising start date "${latestDate}", falling back to ${defaultStartDate}`);
+        return defaultStartDate;
     }
 
     private async fetchStatisticsForDate(date: string): Promise<Record<string, unknown>> {
