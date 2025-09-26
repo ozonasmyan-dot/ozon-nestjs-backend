@@ -105,7 +105,7 @@ export class AdvertisingService {
     }
 
     async saveCPO() {
-        const ads: any = this.cpoParserService.parseCPO();
+        const ads: any = await this.cpoParserService.parseCPO();
 
         if (ads) {
             for (const ad of ads) {
@@ -128,13 +128,14 @@ export class AdvertisingService {
     }
 
     async sync() {
-        const latestDate = await this.advertisingRepository.findLatestDate();
-        const startDate = latestDate ?? '2024-10-01';
-        const dates = getDatesUntilTodayUTC3(startDate);
+        // const latestDate = await this.advertisingRepository.findLatestDate();
+        // const startDate = latestDate ?? '2024-10-01';
+        // const dates = getDatesUntilTodayUTC3(startDate);
+        //
+        // for (const date of dates) {
+        //     await this.getStatisticsExpense(date);
+        // }
 
-        for (const date of dates) {
-            await this.getStatisticsExpense(date);
-        }
 
         await this.saveCPO();
 
