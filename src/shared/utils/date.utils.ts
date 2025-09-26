@@ -14,30 +14,9 @@ dayjs.extend(timezone);
 export function getDatesUntilTodayUTC3(startDate: string): string[] {
     const dates: string[] = [];
 
-    // фиксируем часовой пояс UTC+3 (например, Europe/Moscow)
-    const tz = 'Europe/Moscow';
+    let current = dayjs(startDate).startOf('day');
 
-    // парсим дату начала в нужном поясе и приводим к началу дня
-    let current = dayjs.tz(startDate, tz).startOf('day');
-
-    // сегодняшняя дата в том же поясе, без времени
-    const today = dayjs().tz(tz).startOf('day');
-
-    // добавляем все даты до сегодняшней включительно
-    while (current.isSameOrBefore(today, 'day')) {
-        dates.push(current.format('YYYY-MM-DD'));
-        current = current.add(1, 'day');
-    }
-
-    return dates;
-}
-
-export function getDatesUntilToday(startDate: string): string[] {
-    const dates: string[] = [];
-    const tz = 'Europe/Moscow'; // для UTC+3
-
-    let current = dayjs.tz(startDate, tz).startOf('day');
-    const today = dayjs().tz(tz).startOf('day');
+    const today = dayjs().startOf('day');
 
     while (current.isSameOrBefore(today, 'day')) {
         dates.push(current.format('YYYY-MM-DD'));

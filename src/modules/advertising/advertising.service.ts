@@ -33,8 +33,8 @@ export class AdvertisingService {
         this.logger.log(`Fetching advertising expense statistics for date ${date}`);
 
         const ads = await this.advertisingApiService.getStatisticsExpense({
-            from: date + 'T21:00:00Z',
-            to: date + 'T20:59:59Z',
+            dateFrom: date,
+            dateTo: date,
         });
 
         if (!ads) {
