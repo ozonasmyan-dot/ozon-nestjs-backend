@@ -131,12 +131,8 @@ export class AdvertisingService {
         }
     }
 
-    async parseCPO() {
-        return this.cpoParserService.parseCPO();
-    }
-
     async saveParsedCpo() {
-        const ads: any = await this.parseCPO();
+        const ads: any = this.cpoParserService.parseCPO();
 
         for (const ad of ads) {
             await this.advertisingRepository.upsertMany([{
