@@ -2,6 +2,7 @@ import { AdvertisingService } from "@/modules/advertising/advertising.service";
 import { AdvertisingRepository } from "@/modules/advertising/advertising.repository";
 import { AdvertisingApiService } from "@/api/performance/advertising.service";
 import { FilterAdvertisingDto } from "@/modules/advertising/dto/filter-advertising.dto";
+import { CpoParserService } from "@/modules/advertising/services/cpo-parser.service";
 
 describe("AdvertisingService", () => {
   let repository: jest.Mocked<AdvertisingRepository>;
@@ -14,7 +15,10 @@ describe("AdvertisingService", () => {
     } as unknown as jest.Mocked<AdvertisingRepository>;
 
     const apiService = {} as AdvertisingApiService;
-    service = new AdvertisingService(apiService, repository);
+    const cpoParserService = {
+      parseCPO: jest.fn(),
+    } as unknown as CpoParserService;
+    service = new AdvertisingService(apiService, repository, cpoParserService);
   });
 
   describe("findManyCsv", () => {
