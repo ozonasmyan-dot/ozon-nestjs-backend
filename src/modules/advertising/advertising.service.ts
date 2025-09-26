@@ -51,7 +51,6 @@ export class AdvertisingService {
 
         for (const row of ads) {
             if (row.moneySpent === "0") {
-                this.logger.debug(`Skipping campaign ${row.id} for date ${date} due to zero spend`);
                 continue;
             }
 
@@ -108,21 +107,23 @@ export class AdvertisingService {
     async saveCPO() {
         const ads: any = this.cpoParserService.parseCPO();
 
-        for (const ad of ads) {
-            await this.advertisingRepository.upsertMany([{
-                campaignId: String(ad['ID заказа']),
-                sku: String(ad['SKU продвигаемого товара']),
-                date: dayjs(ad['Дата'], 'DD.MM.YYYY').format('YYYY-MM-DD'),
-                type: 'CPO',
-                clicks: 0,
-                toCart: 0,
-                avgBid: money(ad['Ставка, ₽']).toNumber(),
-                minBidCpo: 0,
-                minBidCpoTop: 0,
-                competitiveBid: 0,
-                weeklyBudget: 0,
-                moneySpent: money(ad['Расход, ₽']).toNumber(),
-            }]);
+        if (ads) {
+            for (const ad of ads) {
+                await this.advertisingRepository.upsertMany([{
+                    campaignId: String(ad['ID заказа']),
+                    sku: String(ad['SKU продвигаемого товара']),
+                    date: dayjs(ad['Дата'], 'DD.MM.YYYY').format('YYYY-MM-DD'),
+                    type: 'CPO',
+                    clicks: 0,
+                    toCart: 0,
+                    avgBid: money(ad['Ставка, ₽']).toNumber(),
+                    minBidCpo: 0,
+                    minBidCpoTop: 0,
+                    competitiveBid: 0,
+                    weeklyBudget: 0,
+                    moneySpent: money(ad['Расход, ₽']).toNumber(),
+                }]);
+            }
         }
     }
 
