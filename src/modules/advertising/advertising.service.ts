@@ -128,14 +128,13 @@ export class AdvertisingService {
     }
 
     async sync() {
-        // const latestDate = await this.advertisingRepository.findLatestDate();
-        // const startDate = latestDate ?? '2024-10-01';
-        // const dates = getDatesUntilTodayUTC3(startDate);
-        //
-        // for (const date of dates) {
-        //     await this.getStatisticsExpense(date);
-        // }
+        const latestDate = await this.advertisingRepository.findLatestDate();
+        const startDate = latestDate ?? '2024-10-01';
+        const dates = getDatesUntilTodayUTC3(startDate);
 
+        for (const date of dates) {
+            await this.getStatisticsExpense(date);
+        }
 
         await this.saveCPO();
 
