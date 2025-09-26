@@ -13,12 +13,14 @@ export class UnitEntity extends OrderEntity {
   costPrice: number;
   totalServices: number;
   margin: number;
+  advertisingExpense: number;
   private statusOzon: OzonStatus | string;
 
   constructor(partial: Partial<UnitEntity>) {
     super(partial);
     Object.assign(this, partial);
     this.statusOzon = (partial.status as OzonStatus) ?? "";
+    this.advertisingExpense = partial.advertisingExpense ?? 0;
     const services = this.buildServices();
     const economy = this.calculateEconomy(services);
     this.status = economy.status;
@@ -28,10 +30,16 @@ export class UnitEntity extends OrderEntity {
   }
 
   private buildServices(): Service[] {
-    return (this.transactions ?? []).map((tx) => ({
+    const services = (this.transactions ?? []).map((tx) => ({
       name: tx.name,
       price: tx.price,
     }));
+
+    if (this.advertisingExpense) {
+      services.push({ name: 'Advertising', price: -this.advertisingExpense });
+    }
+
+    return services;
   }
 
   private getPriceDecimal(): Decimal {

@@ -67,4 +67,26 @@ describe('UnitEntity status calculation', () => {
         const unit = new UnitEntity(getOrder('delivering'));
         expect(unit.status).toBe(CustomStatus.Delivering);
     });
+
+    it('should include advertising expense in total services and margin', () => {
+        const unit = new UnitEntity({
+            id: 'advertising-test',
+            product: 'test',
+            orderId: 'order',
+            orderNumber: 'order-number',
+            postingNumber: 'posting-number',
+            status: 'delivered',
+            createdAt: new Date('2024-01-01T00:00:00.000Z'),
+            inProcessAt: new Date('2024-01-02T00:00:00.000Z'),
+            sku: 'sku',
+            oldPrice: 1000,
+            price: 1000,
+            currencyCode: 'RUB',
+            transactions: [],
+            advertisingExpense: 50,
+        } as any);
+
+        expect(unit.totalServices).toBeCloseTo(-50);
+        expect(unit.margin).toBeCloseTo(-50);
+    });
 });
