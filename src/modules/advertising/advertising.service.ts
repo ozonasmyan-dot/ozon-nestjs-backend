@@ -8,6 +8,7 @@ import {parseNumber} from "@/shared/utils/parse-number.utils";
 import customParseFormat from 'dayjs/plugin/customParseFormat';
 import dayjs from "dayjs";
 import {CpoParserService} from "@/modules/advertising/services/cpo-parser.service";
+import {getDatesUntilTodayUTC3} from "@/shared/utils/date.utils";
 
 dayjs.extend(customParseFormat);
 
@@ -104,7 +105,7 @@ export class AdvertisingService {
         }
     }
 
-    async saveParsedCpo() {
+    async saveCPO() {
         const ads: any = this.cpoParserService.parseCPO();
 
         for (const ad of ads) {
@@ -126,15 +127,14 @@ export class AdvertisingService {
     }
 
     async sync() {
-        // const dates = getDatesUntilTodayUTC3('2025-09-24');
-        //
-        // for (const date of dates) {
-        //     await this.getStatisticsExpense(date);
-        // }
-        //
-        // return 'OK';
+        const dates = getDatesUntilTodayUTC3('2025-09-23');
 
+        for (const date of dates) {
+            await this.getStatisticsExpense(date);
+        }
 
-        return await this.saveParsedCpo();
+        await this.saveCPO();
+
+        return 'OK';
     }
 }
