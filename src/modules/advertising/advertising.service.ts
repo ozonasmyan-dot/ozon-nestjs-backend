@@ -6,10 +6,8 @@ import {FilterAdvertisingDto} from "@/modules/advertising/dto/filter-advertising
 import {money} from "@/shared/utils/money.utils";
 import {parseNumber} from "@/shared/utils/parse-number.utils";
 import customParseFormat from 'dayjs/plugin/customParseFormat';
-import * as fs from 'fs';
-import * as path from 'path';
-import * as XLSX from 'xlsx';
 import dayjs from "dayjs";
+import {CpoParserService} from "@/modules/advertising/services/cpo-parser.service";
 
 dayjs.extend(customParseFormat);
 
@@ -18,10 +16,9 @@ export class AdvertisingService {
     constructor(
         private readonly advertisingApiService: AdvertisingApiService,
         private readonly advertisingRepository: AdvertisingRepository,
+        private readonly cpoParserService: CpoParserService,
     ) {
     }
-
-    private readonly folderPath = path.join(process.cwd(), 'ads');
 
     async findMany(filters: FilterAdvertisingDto): Promise<AdvertisingEntity[]> {
         const items = await this.advertisingRepository.findMany(filters);
@@ -134,49 +131,8 @@ export class AdvertisingService {
         }
     }
 
-    async parseCPO() {
-        const allRows: any[] = [];
-
-        // Читаем все xlsx-файлы в папке
-        const files = await fs.promises.readdir(this.folderPath);
-        const excelFiles = files.filter(
-            f => !f.startsWith('~$') && f.toLowerCase().endsWith('.xlsx')
-        );
-
-        for (const file of excelFiles) {
-            const workbook = XLSX.readFile(path.join(this.folderPath, file));
-            const sheet = workbook.Sheets[workbook.SheetNames[0]];
-            const rows = XLSX.utils.sheet_to_json(sheet, {defval: null, range: 2});
-            allRows.push(...rows);
-        }
-
-        // === Аккумулятор: объединяем по дате и SKU ===
-        const aggregated = Object.values(
-            allRows.reduce((acc, row) => {
-                // ключ: дата + sku
-                const date = row['Дата'];
-                const sku = row['SKU продвигаемого товара'];
-                const key = `${date}_${sku}`;
-
-                // берём расход, обрабатываем пустые/строковые значения
-                const spend = Number(row['Расход, ₽'] || 0);
-
-                if (!acc[key]) {
-                    // если ещё нет, кладём копию строки
-                    acc[key] = {...row, 'Расход, ₽': spend};
-                } else {
-                    // если уже есть — плюсуем расход
-                    acc[key]['Расход, ₽'] += spend;
-                }
-                return acc;
-            }, {} as Record<string, any>)
-        );
-
-        return aggregated as any[];
-    }
-
     async saveParsedCpo() {
-        const ads: any = await this.parseCPO();
+        const ads: any = this.cpoParserService.parseCPO();
 
         for (const ad of ads) {
             await this.advertisingRepository.upsertMany([{
