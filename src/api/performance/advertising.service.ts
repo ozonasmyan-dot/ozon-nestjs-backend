@@ -10,20 +10,18 @@ export class AdvertisingApiService {
         return await this.http.fetchApiReportData('/api/client/statistics/json', data);
     }
 
-    async getDailyStatistics(data: any) {
-        const {data: rows} = await this.http.client.axiosRef.get('/api/client/statistics/daily/json', {
-            params: data
-        });
-
-        return rows;
-    }
-
     async getStatisticsExpense(data: any) {
         const {data: rows} = await this.http.client.axiosRef.get('/api/client/statistics/campaign/product/json', {
             params: data
         });
 
-        return rows;
+        return rows.rows;
+    }
+
+    async getProductsInCampaign(id: any) {
+        const {data: list} = await this.http.client.axiosRef.get(`/api/client/campaign/${id}/objects`);
+
+        return list.list[0].id;
     }
 
     async getProductsBidsCompetitiveInCampaign(campaignId: any, params: any) {

@@ -7,8 +7,8 @@ export class AdvertisingController {
   constructor(private readonly advertisingService: AdvertisingService) {}
 
   @Get()
-  findMany(@Query() dto: FilterAdvertisingDto) {
-    return this.advertisingService.findMany(dto);
+  get() {
+    return this.advertisingService.sync();
   }
 
   @Get('csv')
@@ -16,10 +16,5 @@ export class AdvertisingController {
   @Header('Content-Disposition', 'attachment; filename="advertising.csv"')
   findManyCsv(@Query() dto: FilterAdvertisingDto) {
     return this.advertisingService.findManyCsv(dto);
-  }
-
-  @Get('sync')
-  sync() {
-    return this.advertisingService.get();
   }
 }

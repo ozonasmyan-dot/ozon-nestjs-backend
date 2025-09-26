@@ -2,7 +2,7 @@ export class CreateAdvertisingDto {
   campaignId: string;
   sku: string;
   date: string;
-  type: 'CPC' | 'CPO';
+  type: 'PPC' | 'CPO';
   clicks: number;
   toCart: number;
   avgBid: number;
