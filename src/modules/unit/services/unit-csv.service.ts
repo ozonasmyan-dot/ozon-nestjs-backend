@@ -1,11 +1,12 @@
-import { Injectable } from '@nestjs/common';
-import { UnitService } from '@/modules/unit/unit.service';
-import { AggregateUnitDto } from '@/modules/unit/dto/aggregate-unit.dto';
+import {Injectable} from '@nestjs/common';
+import {UnitService} from '@/modules/unit/unit.service';
+import {AggregateUnitDto} from '@/modules/unit/dto/aggregate-unit.dto';
 import dayjs from 'dayjs';
 
 @Injectable()
 export class UnitCsvService {
-    constructor(private readonly unitService: UnitService) {}
+    constructor(private readonly unitService: UnitService) {
+    }
 
     async aggregateCsv(dto: AggregateUnitDto): Promise<string> {
         const items = await this.unitService.aggregate(dto);
@@ -36,29 +37,29 @@ export class UnitCsvService {
 
     async aggregateOrdersCsv(dto: AggregateUnitDto): Promise<string> {
         const items = await this.unitService.aggregate(dto);
-        const header = ['ordersMoney', 'count', 'date', 'sku'];
+        const header = ['date', 'sku', 'ordersMoney', 'count'];
 
         const grouped = new Map<
             string,
-            { ordersMoney: number; count: number; date: string; sku: string }
+            { date: string; sku: string; ordersMoney: number; count: number; }
         >();
 
         items.forEach((item) => {
-                const date = dayjs(item.createdAt).format('YYYY-MM-DD');
-                const key = `${item.sku}_${date}`;
-                const current =
-                    grouped.get(key) ?? {
-                        sku: item.product,
-                        ordersMoney: 0,
-                        count: 0,
-                        date,
-                    };
+            const date = dayjs(item.createdAt).format('YYYY-MM-DD');
+            const key = `${item.sku}_${date}`;
+            const current =
+                grouped.get(key) ?? {
+                    date,
+                    sku: item.product,
+                    ordersMoney: 0,
+                    count: 0,
+                };
 
-                current.ordersMoney += item.price;
-                current.count += 1;
+            current.ordersMoney += item.price;
+            current.count += 1;
 
-                grouped.set(key, current);
-            });
+            grouped.set(key, current);
+        });
 
         const rows = Array.from(grouped.values())
             .sort((a, b) => {
@@ -69,7 +70,7 @@ export class UnitCsvService {
                 return a.sku.localeCompare(b.sku);
             })
             .map((item) =>
-                [item.ordersMoney, item.count, item.date, item.sku]
+                [item.date, item.sku, item.ordersMoney, item.count]
                     .map((value) => String(value))
                     .join(','),
             );
