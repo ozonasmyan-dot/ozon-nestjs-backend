@@ -1,4 +1,4 @@
-export class CreateTransactionDto {
+export class CreateDto {
   operationId: string;
   name: string;
   date: Date;

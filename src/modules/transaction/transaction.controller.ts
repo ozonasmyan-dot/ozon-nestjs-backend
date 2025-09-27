@@ -9,4 +9,9 @@ export class TransactionController {
   sync() {
     return this.transactionService.sync();
   }
+
+  @Get('names')
+  names() {
+    return this.transactionService.getNames();
+  }
 }

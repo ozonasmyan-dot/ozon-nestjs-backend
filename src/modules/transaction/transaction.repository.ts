@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
-import { CreateTransactionDto } from './dto/create-transaction.dto';
-import { UpdateTransactionDto } from './dto/update-transaction.dto';
+import { CreateDto } from './dto/create.dto';
+import { UpdateDto } from './dto/update.dto';
 import { Prisma, Transaction } from '@prisma/client';
 
 @Injectable()
@@ -12,7 +12,7 @@ export class TransactionRepository {
     return this.prisma.transaction.count();
   }
 
-  create(data: CreateTransactionDto) {
+  create(data: CreateDto) {
     const payload = {
       ...data,
       postingNumber: data.postingNumber ?? null,
@@ -34,8 +34,8 @@ export class TransactionRepository {
     });
   }
 
-  findAll() {
-    return this.prisma.transaction.findMany();
+  findAll(filters = {}) {
+    return this.prisma.transaction.findMany(filters);
   }
 
   findByPostingNumbers(postingNumbers: string[]) {

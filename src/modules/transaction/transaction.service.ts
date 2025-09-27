@@ -36,7 +36,18 @@ export class TransactionService {
     }
 
     const queries = filtered.map((op) => this.repository.create(op));
+
     await this.repository.transaction(queries);
-    return filtered.length;
+
+    return this.repository.findAll();
+  }
+
+  async getNames () {
+    return (
+        await this.repository.findAll({
+          distinct: ['name'],
+          select: { name: true },
+        })
+    ).map((item) => item.name);
   }
 }
