@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { AdvertisingService } from '@/modules/advertising/advertising.service';
 import { FilterAdvertisingDto } from '@/modules/advertising/dto/filter-advertising.dto';
+import {PRODUCTS} from "@/shared/constants/products";
 
 @Injectable()
 export class AdvertisingCsvService {
@@ -26,7 +27,8 @@ export class AdvertisingCsvService {
         const rows = items.map((item) =>
             [
                 item.campaignId,
-                item.sku,
+                // @ts-ignore
+                PRODUCTS[item.sku as keyof typeof PRODUCTS] ?? item.sku,
                 item.date,
                 item.type,
                 item.clicks,
