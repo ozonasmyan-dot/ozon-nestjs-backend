@@ -1,13 +1,13 @@
 import { Controller, Get, Header, Query } from '@nestjs/common';
 import {AdvertisingService} from "@/modules/advertising/advertising.service";
 import {FilterAdvertisingDto} from "@/modules/advertising/dto/filter-advertising.dto";
-import {AdvertisingCsvService} from "@/modules/advertising/services/advertising-csv.service";
+import {CsvService} from "@/modules/advertising/services/csv.service";
 
 @Controller('advertising')
 export class AdvertisingController {
   constructor(
     private readonly advertisingService: AdvertisingService,
-    private readonly advertisingCsvService: AdvertisingCsvService,
+    private readonly advertisingCsvService: CsvService,
   ) {}
 
   @Get('sync')

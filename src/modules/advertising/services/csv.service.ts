@@ -4,7 +4,7 @@ import { FilterAdvertisingDto } from '@/modules/advertising/dto/filter-advertisi
 import {PRODUCTS} from "@/shared/constants/products";
 
 @Injectable()
-export class AdvertisingCsvService {
+export class CsvService {
     constructor(private readonly advertisingService: AdvertisingService) {}
 
     async findManyCsv(filters: FilterAdvertisingDto): Promise<string> {

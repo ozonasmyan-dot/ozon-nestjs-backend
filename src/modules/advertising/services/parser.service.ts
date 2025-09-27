@@ -4,7 +4,7 @@ import * as path from 'path';
 import * as XLSX from 'xlsx';
 
 @Injectable()
-export class CpoParserService {
+export class ParserService {
     private readonly folderPath = path.join(process.cwd(), 'ads');
 
     async parseCPO(): Promise<any[]> {

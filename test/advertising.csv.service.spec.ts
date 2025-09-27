@@ -1,4 +1,4 @@
-import { AdvertisingCsvService } from "@/modules/advertising/services/advertising-csv.service";
+import { CsvService } from "@/modules/advertising/services/csv.service";
 import { AdvertisingService } from "@/modules/advertising/advertising.service";
 import { FilterAdvertisingDto } from "@/modules/advertising/dto/filter-advertising.dto";
 
@@ -25,7 +25,7 @@ describe("AdvertisingCsvService", () => {
       ]),
     } as jest.Mocked<Pick<AdvertisingService, "sync" | "findMany">>;
 
-    const service = new AdvertisingCsvService(
+    const service = new CsvService(
       advertisingService as unknown as AdvertisingService,
     );
 

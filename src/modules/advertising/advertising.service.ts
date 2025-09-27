@@ -7,19 +7,11 @@ import {money} from "@/shared/utils/money.utils";
 import {parseNumber} from "@/shared/utils/parse-number.utils";
 import customParseFormat from 'dayjs/plugin/customParseFormat';
 import dayjs from "dayjs";
-import {CpoParserService} from "@/modules/advertising/services/cpo-parser.service";
+import {ParserService} from "@/modules/advertising/services/parser.service";
 import {getDatesUntilTodayUTC3} from "@/shared/utils/date.utils";
 import {PRODUCTS} from "@/shared/constants/products";
 
 dayjs.extend(customParseFormat);
-
-const normalizeSku = (value: unknown): string | null => {
-    if (value === null || value === undefined) {
-        return null;
-    }
-    const trimmed = String(value).trim();
-    return trimmed.length ? trimmed : null;
-};
 
 @Injectable()
 export class AdvertisingService {
@@ -28,7 +20,7 @@ export class AdvertisingService {
     constructor(
         private readonly advertisingApiService: AdvertisingApiService,
         private readonly advertisingRepository: AdvertisingRepository,
-        private readonly cpoParserService: CpoParserService,
+        private readonly cpoParserService: ParserService,
     ) {
     }
 
@@ -64,9 +56,7 @@ export class AdvertisingService {
             }
 
             try {
-                const sku = normalizeSku(
-                    await this.advertisingApiService.getProductsInCampaign(row.id),
-                );
+                const sku = await this.advertisingApiService.getProductsInCampaign(row.id);
 
                 if (!sku) {
                     this.logger.warn(
@@ -98,9 +88,8 @@ export class AdvertisingService {
                 const competitiveBid = Math.floor(competitiveBidValue / 1_000_000);
 
                 await this.advertisingRepository.upsertMany([{
-                    campaignId: row.id,
-                    sku,
-                    // @ts-ignore
+                    campaignId: String(row.id),
+                    sku: String(sku),
                     product: PRODUCTS[sku],
                     date: date,
                     type: 'PPC',
@@ -129,8 +118,8 @@ export class AdvertisingService {
 
         if (ads) {
             for (const ad of ads) {
-                const campaignId = normalizeSku(ad['ID заказа']);
-                const sku = normalizeSku(ad['SKU продвигаемого товара']);
+                const campaignId = ad['ID заказа'];
+                const sku = ad['SKU продвигаемого товара'];
 
                 if (!campaignId || !sku) {
                     this.logger.warn(
@@ -140,8 +129,8 @@ export class AdvertisingService {
                 }
 
                 await this.advertisingRepository.upsertMany([{
-                    campaignId,
-                    sku,
+                    campaignId: String(campaignId),
+                    sku: String(sku),
                     product: PRODUCTS[sku],
                     date: dayjs(ad['Дата'], 'DD.MM.YYYY').format('YYYY-MM-DD'),
                     type: 'CPO',
