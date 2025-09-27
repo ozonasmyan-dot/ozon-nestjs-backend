@@ -33,4 +33,47 @@ export class UnitCsvService {
         });
         return [header.join(','), ...rows].join('\n');
     }
+
+    async aggregateOrdersCsv(dto: AggregateUnitDto): Promise<string> {
+        const items = await this.unitService.aggregate(dto);
+        const header = ['ordersMoney', 'count', 'date', 'sku'];
+
+        const grouped = new Map<
+            string,
+            { ordersMoney: number; count: number; date: string; sku: string }
+        >();
+
+        items.forEach((item) => {
+                const date = dayjs(item.createdAt).format('YYYY-MM-DD');
+                const key = `${item.sku}_${date}`;
+                const current =
+                    grouped.get(key) ?? {
+                        sku: item.product,
+                        ordersMoney: 0,
+                        count: 0,
+                        date,
+                    };
+
+                current.ordersMoney += item.price;
+                current.count += 1;
+
+                grouped.set(key, current);
+            });
+
+        const rows = Array.from(grouped.values())
+            .sort((a, b) => {
+                const dateDiff = a.date.localeCompare(b.date);
+                if (dateDiff !== 0) {
+                    return dateDiff;
+                }
+                return a.sku.localeCompare(b.sku);
+            })
+            .map((item) =>
+                [item.ordersMoney, item.count, item.date, item.sku]
+                    .map((value) => String(value))
+                    .join(','),
+            );
+
+        return [header.join(','), ...rows].join('\n');
+    }
 }

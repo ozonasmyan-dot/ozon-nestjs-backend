@@ -3,6 +3,7 @@ import { OrderRepository } from "@/modules/order/order.repository";
 import { TransactionRepository } from "@/modules/transaction/transaction.repository";
 import { UnitFactory } from "@/modules/unit/unit.factory";
 import ordersFixture from "@/shared/data/orders.fixture";
+import { CustomStatus } from "@/modules/unit/ts/custom-status.enum";
 
 describe("UnitService", () => {
   let service: UnitService;
@@ -41,20 +42,28 @@ describe("UnitService", () => {
     );
   });
 
-  it("sums price and costPrice only for delivered items", async () => {
+  it("calculates custom statuses and economy for each order", async () => {
     const result = await service.aggregate({});
-    expect(result.totals[0].price).toBe(1000);
-    expect(result.totals[0].costPrice).toBe(771);
+    expect(result).toHaveLength(orders.length);
+
+    const delivered = result.find((item) => item.id === "delivered-negative");
+    expect(delivered?.status).toBe(CustomStatus.Delivered);
+    expect(delivered?.costPrice).toBe(771);
+    expect(delivered?.margin).toBeCloseTo(219);
+
+    const returnUnit = result.find((item) => item.id === "delivered-positive");
+    expect(returnUnit?.status).toBe(CustomStatus.Return);
   });
 
-  it("returns csv representation of units", async () => {
-    const csv = await service.aggregateCsv({});
-    const lines = csv.trim().split("\n");
-    expect(lines[0]).toBe(
-      "orderNumber,postingNumber,sku,status,price,costPrice,margin,totalServices,transactions",
+  it("filters units by custom statuses when status filter provided", async () => {
+    const result = await service.aggregate({
+      status: CustomStatus.Delivered,
+    });
+
+    expect(result).not.toHaveLength(0);
+    expect(result.every((unit) => unit.status === CustomStatus.Delivered)).toBe(
+      true,
     );
-    expect(lines.length).toBe(orders.length + 1);
-    expect(csv).toContain("t2:-400");
   });
 
   it("uses UnitFactory to create units", async () => {
