@@ -12,7 +12,12 @@ export class OrderRepository {
   }
 
   findAll(where: Prisma.OrderWhereInput = {}): Promise<Order[]> {
-    return this.prisma.order.findMany({ where });
+    return this.prisma.order.findMany({
+      where,
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
   }
 
   upsert(data: CreateOrderDto): Promise<Order> {
