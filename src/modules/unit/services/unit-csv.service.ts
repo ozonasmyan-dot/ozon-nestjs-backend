@@ -19,6 +19,7 @@ export class UnitCsvService {
             'costPrice',
             'totalServices',
             'price',
+            'advertisingPerUnit',
         ];
         const rows = items.map((item) => {
             return [
@@ -30,6 +31,7 @@ export class UnitCsvService {
                 item.costPrice,
                 item.totalServices,
                 item.price,
+                item.advertisingPerUnit,
             ].join(',');
         });
         return [header.join(','), ...rows].join('\n');
