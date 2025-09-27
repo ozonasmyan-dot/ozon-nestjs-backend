@@ -1,45 +1,15 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
 import { CreateAdvertisingDto } from './dto/create-advertising.dto';
-
-interface AdvertisingFilterParams {
-  campaignId?: string;
-  dateFrom?: string;
-  dateTo?: string;
-}
 
 @Injectable()
 export class AdvertisingRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findMany(filters: AdvertisingFilterParams) {
-    const where: Prisma.AdvertisingWhereInput = {};
-
-    if (filters.campaignId) {
-      where.campaignId = filters.campaignId;
-    }
-
-    if (filters.dateFrom || filters.dateTo) {
-      const dateFilter: Prisma.StringFilter = {};
-
-      if (filters.dateFrom) {
-        dateFilter.gte = filters.dateFrom;
-      }
-
-      if (filters.dateTo) {
-        dateFilter.lte = filters.dateTo;
-      }
-
-      where.date = dateFilter;
-    }
-
+  async findMany() {
     return this.prisma.advertising.findMany({
-      where,
       orderBy: [
         { date: 'desc' },
-        { campaignId: 'asc' },
-        { sku: 'asc' },
       ],
     });
   }

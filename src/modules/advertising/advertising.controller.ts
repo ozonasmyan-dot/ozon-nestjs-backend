@@ -3,7 +3,7 @@ import {AdvertisingService} from "@/modules/advertising/advertising.service";
 import {FilterAdvertisingDto} from "@/modules/advertising/dto/filter-advertising.dto";
 import {CsvService} from "@/modules/advertising/services/csv.service";
 
-@Controller('advertising')
+@Controller('ad')
 export class AdvertisingController {
   constructor(
     private readonly advertisingService: AdvertisingService,
