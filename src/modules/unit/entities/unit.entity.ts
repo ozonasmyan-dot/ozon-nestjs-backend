@@ -13,11 +13,13 @@ export class UnitEntity extends OrderEntity {
   costPrice: number;
   totalServices: number;
   margin: number;
+  advertisingPerUnit: number;
   private statusOzon: OzonStatus | string;
 
   constructor(partial: Partial<UnitEntity>) {
     super(partial);
     Object.assign(this, partial);
+    this.advertisingPerUnit = partial.advertisingPerUnit ?? 0;
     this.statusOzon = (partial.status as OzonStatus) ?? "";
     const services = this.buildServices();
     const economy = this.calculateEconomy(services);

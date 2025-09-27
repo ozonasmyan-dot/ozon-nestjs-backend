@@ -101,4 +101,24 @@ export class AdvertisingRepository {
 
     return lastRecord?.date ?? null;
   }
+
+  async findBySkusAndDateRange(
+    skus: string[],
+    dateFrom: string,
+    dateTo: string,
+  ) {
+    if (!skus.length) {
+      return [];
+    }
+
+    return this.prisma.advertising.findMany({
+      where: {
+        sku: { in: skus },
+        date: {
+          gte: dateFrom,
+          lte: dateTo,
+        },
+      },
+    });
+  }
 }

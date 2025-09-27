@@ -5,6 +5,7 @@ import { TransactionRepository } from "@/modules/transaction/transaction.reposit
 import { UnitFactory } from "@/modules/unit/unit.factory";
 import ordersFixture from "@/shared/data/orders.fixture";
 import dayjs from "dayjs";
+import { AdvertisingRepository } from "@/modules/advertising/advertising.repository";
 
 describe("UnitCsvService", () => {
   let service: UnitService;
@@ -35,10 +36,14 @@ describe("UnitCsvService", () => {
           ),
         ),
     } as unknown as TransactionRepository;
+    const advertisingRepository = {
+      findBySkusAndDateRange: jest.fn().mockResolvedValue([]),
+    } as unknown as AdvertisingRepository;
     service = new UnitService(
       orderRepository,
       transactionRepository,
       new UnitFactory(),
+      advertisingRepository,
     );
     csvService = new UnitCsvService(service);
   });
@@ -77,12 +82,12 @@ describe("UnitCsvService", () => {
         return a.sku.localeCompare(b.sku);
       })
       .map((item) =>
-        [item.ordersMoney, item.count, item.date, item.sku]
+        [item.date, item.sku, item.ordersMoney, item.count]
           .map((value) => String(value))
           .join(","),
       );
 
-    const expectedCsv = ["ordersMoney,count,date,sku", ...expectedRows].join("\n");
+    const expectedCsv = ["date,sku,ordersMoney,count", ...expectedRows].join("\n");
 
     expect(csv).toBe(expectedCsv);
   });
@@ -95,6 +100,14 @@ describe("UnitCsvService", () => {
 
     const csv = await emptyCsvService.aggregateOrdersCsv({});
 
-    expect(csv).toBe("ordersMoney,count,date,sku");
+    expect(csv).toBe("date,sku,ordersMoney,count");
+  });
+
+  it("includes advertisingPerUnit column in unit export", async () => {
+    const csv = await csvService.aggregateCsv({});
+    const [header, firstDataRow] = csv.split("\n");
+
+    expect(header.split(",")).toContain("advertisingPerUnit");
+    expect(firstDataRow.split(",").length).toBe(header.split(",").length);
   });
 });

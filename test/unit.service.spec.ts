@@ -4,12 +4,14 @@ import { TransactionRepository } from "@/modules/transaction/transaction.reposit
 import { UnitFactory } from "@/modules/unit/unit.factory";
 import ordersFixture from "@/shared/data/orders.fixture";
 import { CustomStatus } from "@/modules/unit/ts/custom-status.enum";
+import { AdvertisingRepository } from "@/modules/advertising/advertising.repository";
 
 describe("UnitService", () => {
   let service: UnitService;
   let orders: any[];
   let transactions: any[];
   let unitFactory: UnitFactory;
+  let advertisingRepository: jest.Mocked<AdvertisingRepository>;
 
   beforeAll(() => {
     orders = ordersFixture.map((o) => ({
@@ -34,11 +36,32 @@ describe("UnitService", () => {
           ),
         ),
     } as unknown as TransactionRepository;
+    advertisingRepository = {
+      findBySkusAndDateRange: jest.fn().mockResolvedValue([
+        {
+          id: "ad-1",
+          campaignId: "cmp-1",
+          sku: "1828048543",
+          date: "2024-01-05",
+          type: "search",
+          clicks: 0,
+          toCart: 0,
+          avgBid: 0,
+          minBidCpo: 0,
+          minBidCpoTop: 0,
+          competitiveBid: 0,
+          weeklyBudget: 0,
+          moneySpent: 800,
+          createdAt: new Date("2024-01-05T00:00:00.000Z"),
+        },
+      ]),
+    } as unknown as jest.Mocked<AdvertisingRepository>;
     unitFactory = new UnitFactory();
     service = new UnitService(
       orderRepository,
       transactionRepository,
       unitFactory,
+      advertisingRepository,
     );
   });
 
@@ -50,6 +73,7 @@ describe("UnitService", () => {
     expect(delivered?.status).toBe(CustomStatus.Delivered);
     expect(delivered?.costPrice).toBe(771);
     expect(delivered?.margin).toBeCloseTo(219);
+    expect(delivered?.advertisingPerUnit).toBeCloseTo(100);
 
     const returnUnit = result.find((item) => item.id === "delivered-positive");
     expect(returnUnit?.status).toBe(CustomStatus.Return);
@@ -70,5 +94,23 @@ describe("UnitService", () => {
     const spy = jest.spyOn(unitFactory, "createUnit");
     await service.aggregate({});
     expect(spy).toHaveBeenCalledTimes(orders.length);
+    const [order, orderTransactions, additional] = spy.mock.calls[0];
+    expect(order).toBeDefined();
+    expect(orderTransactions).toBeInstanceOf(Array);
+    expect(additional).toEqual(
+      expect.objectContaining({ advertisingPerUnit: expect.any(Number) }),
+    );
+  });
+
+  it("requests advertising statistics for the aggregated period", async () => {
+    await service.aggregate({});
+    const [skus, dateFrom, dateTo] =
+      advertisingRepository.findBySkusAndDateRange.mock.calls[0];
+
+    expect(new Set(skus)).toEqual(
+      new Set(["1828048543", "сумка_кросбоди_черная"]),
+    );
+    expect(dateFrom).toBe("2024-01-01");
+    expect(dateTo).toBe("2024-01-31");
   });
 });
