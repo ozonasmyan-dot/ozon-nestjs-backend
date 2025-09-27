@@ -7,9 +7,12 @@ import { TransactionRepository } from '@/modules/transaction/transaction.reposit
 import { UnitFactory } from './unit.factory';
 import { UnitCsvService } from '@/modules/unit/services/unit-csv.service';
 import { AdvertisingRepository } from '@/modules/advertising/advertising.repository';
+import { OrderModule } from '@/modules/order/order.module';
+import { TransactionModule } from '@/modules/transaction/transaction.module';
+import { AdvertisingModule } from '@/modules/advertising/advertising.module';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, OrderModule, TransactionModule, AdvertisingModule],
   controllers: [UnitController],
   providers: [
     UnitService,

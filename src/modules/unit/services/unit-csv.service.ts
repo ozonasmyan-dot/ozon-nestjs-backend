@@ -2,13 +2,53 @@ import {Injectable} from '@nestjs/common';
 import {UnitService} from '@/modules/unit/unit.service';
 import {AggregateUnitDto} from '@/modules/unit/dto/aggregate-unit.dto';
 import dayjs from 'dayjs';
+import {OrderService} from '@/modules/order/order.service';
+import {TransactionService} from '@/modules/transaction/transaction.service';
+import {AdvertisingService} from '@/modules/advertising/advertising.service';
+import {GetPostingsDto} from '@/api/seller/dto/get-postings.dto';
 
 @Injectable()
 export class UnitCsvService {
-    constructor(private readonly unitService: UnitService) {
+    private synchronizationPromise: Promise<void> | null = null;
+
+    constructor(
+        private readonly unitService: UnitService,
+        private readonly orderService: OrderService,
+        private readonly transactionService: TransactionService,
+        private readonly advertisingService: AdvertisingService,
+    ) {
+    }
+
+    private createDefaultOrderSyncDto(): GetPostingsDto {
+        return {
+            limit: 1000,
+            with: {
+                analytics_data: true,
+                financial_data: true,
+            },
+        };
+    }
+
+    private async performSynchronization(): Promise<void> {
+        await Promise.all([
+            this.transactionService.sync(),
+            this.orderService.sync(this.createDefaultOrderSyncDto()),
+            this.advertisingService.sync(),
+        ]);
+    }
+
+    private async ensureSynchronized(): Promise<void> {
+        if (!this.synchronizationPromise) {
+            this.synchronizationPromise = this.performSynchronization().finally(() => {
+                this.synchronizationPromise = null;
+            });
+        }
+
+        await this.synchronizationPromise;
     }
 
     async aggregateCsv(dto: AggregateUnitDto): Promise<string> {
+        await this.ensureSynchronized();
         const items = await this.unitService.aggregate(dto);
         const header = [
             'product',
@@ -46,6 +86,7 @@ export class UnitCsvService {
     }
 
     async aggregateOrdersCsv(dto: AggregateUnitDto): Promise<string> {
+        await this.ensureSynchronized();
         const items = await this.unitService.aggregate(dto);
         const header = ['date', 'sku', 'ordersMoney', 'count'];
 

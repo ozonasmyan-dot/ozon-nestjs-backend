@@ -9,6 +9,7 @@ import {SellerApiModule} from '@/api/seller/seller.module';
     imports: [PrismaModule, SellerApiModule],
     controllers: [TransactionController],
     providers: [TransactionService, TransactionRepository],
+    exports: [TransactionService],
 })
 export class TransactionModule {
 }
