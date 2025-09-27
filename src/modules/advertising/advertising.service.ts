@@ -24,8 +24,8 @@ export class AdvertisingService {
     ) {
     }
 
-    async findMany(filters: FilterAdvertisingDto): Promise<AdvertisingEntity[]> {
-        const items = await this.advertisingRepository.findMany(filters);
+    async findMany(): Promise<AdvertisingEntity[]> {
+        const items = await this.advertisingRepository.findMany();
 
         return items.map((item) => new AdvertisingEntity(item));
     }
