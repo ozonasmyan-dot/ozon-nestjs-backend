@@ -3,7 +3,7 @@ import { AdvertisingService } from "@/modules/advertising/advertising.service";
 import { FilterAdvertisingDto } from "@/modules/advertising/dto/filter-advertising.dto";
 
 describe("AdvertisingCsvService", () => {
-  it("synchronizes data before generating csv", async () => {
+  it("generates csv without triggering synchronization", async () => {
     const filters = { campaignId: "campaign-1" } as FilterAdvertisingDto;
     const advertisingService = {
       sync: jest.fn().mockResolvedValue("OK"),
@@ -31,7 +31,7 @@ describe("AdvertisingCsvService", () => {
 
     const csv = await service.findManyCsv(filters);
 
-    expect(advertisingService.sync).toHaveBeenCalledTimes(1);
+    expect(advertisingService.sync).not.toHaveBeenCalled();
     expect(advertisingService.findMany).toHaveBeenCalledWith(filters);
     expect(csv.split("\n")[0]).toBe(
       "campaignId,sku,type,views,moneySpent,toCart,competitiveBid,weeklyBudget,minBidCpo,minBidCpoTop,avgBid,empty,clicks,date",
