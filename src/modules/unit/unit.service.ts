@@ -9,20 +9,6 @@ import {buildOrderWhere} from "./utils/order-filter.utils";
 import {UnitFactory} from "./unit.factory";
 import {AdvertisingRepository} from "@/modules/advertising/advertising.repository";
 import {money} from "@/shared/utils/money.utils";
-import {PRODUCTS} from "@/shared/constants/products";
-
-const PRODUCT_ENTRIES = Object.entries(PRODUCTS);
-
-const CANONICAL_SKU_BY_ALIAS = new Map<string, string>();
-const ORIGINAL_SKU_BY_CANONICAL = new Map<string, string>();
-
-PRODUCT_ENTRIES.forEach(([key, value]) => {
-    const canonical = value.trim();
-    CANONICAL_SKU_BY_ALIAS.set(key, canonical);
-    CANONICAL_SKU_BY_ALIAS.set(canonical, canonical);
-    ORIGINAL_SKU_BY_CANONICAL.set(canonical, key);
-});
-
 const trimNullable = (value?: string | null): string | null => {
     if (typeof value !== "string") {
         return null;
@@ -31,13 +17,7 @@ const trimNullable = (value?: string | null): string | null => {
     return trimmed.length ? trimmed : null;
 };
 
-const normalizeSku = (value?: string | null): string | null => {
-    const trimmed = trimNullable(value);
-    if (!trimmed) {
-        return null;
-    }
-    return CANONICAL_SKU_BY_ALIAS.get(trimmed) ?? trimmed;
-};
+const normalizeSku = (value?: string | null): string | null => trimNullable(value);
 
 const collectSkuVariants = (
     ...values: Array<string | null | undefined>
@@ -49,14 +29,6 @@ const collectSkuVariants = (
             return;
         }
         variants.add(trimmed);
-        const canonical = CANONICAL_SKU_BY_ALIAS.get(trimmed);
-        if (canonical) {
-            variants.add(canonical);
-            const original = ORIGINAL_SKU_BY_CANONICAL.get(canonical);
-            if (original) {
-                variants.add(original);
-            }
-        }
     });
     return Array.from(variants);
 };

@@ -12,6 +12,14 @@ import {getDatesUntilTodayUTC3} from "@/shared/utils/date.utils";
 
 dayjs.extend(customParseFormat);
 
+const normalizeSku = (value: unknown): string | null => {
+    if (value === null || value === undefined) {
+        return null;
+    }
+    const trimmed = String(value).trim();
+    return trimmed.length ? trimmed : null;
+};
+
 @Injectable()
 export class AdvertisingService {
     private readonly logger = new Logger(AdvertisingService.name);
@@ -55,7 +63,16 @@ export class AdvertisingService {
             }
 
             try {
-                const sku = await this.advertisingApiService.getProductsInCampaign(row.id);
+                const sku = normalizeSku(
+                    await this.advertisingApiService.getProductsInCampaign(row.id),
+                );
+
+                if (!sku) {
+                    this.logger.warn(
+                        `Campaign ${row.id} for date ${date} returned empty SKU. Skipping.`,
+                    );
+                    continue;
+                }
 
                 const competitiveBidQuery = await this.advertisingApiService.getProductsBidsCompetitiveInCampaign(row.id, {
                     skus: sku,
@@ -109,9 +126,19 @@ export class AdvertisingService {
 
         if (ads) {
             for (const ad of ads) {
+                const campaignId = normalizeSku(ad['ID заказа']);
+                const sku = normalizeSku(ad['SKU продвигаемого товара']);
+
+                if (!campaignId || !sku) {
+                    this.logger.warn(
+                        `CPO row skipped due to missing campaignId or SKU.`,
+                    );
+                    continue;
+                }
+
                 await this.advertisingRepository.upsertMany([{
-                    campaignId: String(ad['ID заказа']),
-                    sku: String(ad['SKU продвигаемого товара']),
+                    campaignId,
+                    sku,
                     date: dayjs(ad['Дата'], 'DD.MM.YYYY').format('YYYY-MM-DD'),
                     type: 'CPO',
                     clicks: 0,
