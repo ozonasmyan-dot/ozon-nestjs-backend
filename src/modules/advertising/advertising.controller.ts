@@ -10,7 +10,7 @@ export class AdvertisingController {
     private readonly advertisingCsvService: AdvertisingCsvService,
   ) {}
 
-  @Get()
+  @Get('sync')
   get() {
     return this.advertisingService.sync();
   }

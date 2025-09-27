@@ -10,7 +10,7 @@ export class UnitController {
     private readonly unitCsvService: UnitCsvService,
   ) {}
 
-  @Get()
+  @Get('sync')
   aggregate(@Query() dto: AggregateUnitDto) {
     return this.unitService.aggregate(dto);
   }
