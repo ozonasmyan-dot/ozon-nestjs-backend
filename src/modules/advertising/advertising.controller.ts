@@ -1,6 +1,5 @@
 import { Controller, Get, Header, Query } from '@nestjs/common';
 import {AdvertisingService} from "@/modules/advertising/advertising.service";
-import {FilterAdvertisingDto} from "@/modules/advertising/dto/filter-advertising.dto";
 import {CsvService} from "@/modules/advertising/services/csv.service";
 
 @Controller('ad')
@@ -18,7 +17,7 @@ export class AdvertisingController {
   @Get('csv')
   @Header('Content-Type', 'text/csv')
   @Header('Content-Disposition', 'attachment; filename="advertising.csv"')
-  findManyCsv(@Query() dto: FilterAdvertisingDto) {
-    return this.advertisingCsvService.findManyCsv(dto);
+  findManyCsv() {
+    return this.advertisingCsvService.findManyCsv();
   }
 }

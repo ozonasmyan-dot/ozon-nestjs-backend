@@ -2,7 +2,6 @@ import {Injectable, Logger} from '@nestjs/common';
 import {AdvertisingApiService} from "@/api/performance/advertising.service";
 import {AdvertisingRepository} from "@/modules/advertising/advertising.repository";
 import {AdvertisingEntity} from "@/modules/advertising/entities/advertising.entity";
-import {FilterAdvertisingDto} from "@/modules/advertising/dto/filter-advertising.dto";
 import {money} from "@/shared/utils/money.utils";
 import {parseNumber} from "@/shared/utils/parse-number.utils";
 import customParseFormat from 'dayjs/plugin/customParseFormat';

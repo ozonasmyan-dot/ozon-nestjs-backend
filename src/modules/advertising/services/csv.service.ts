@@ -1,14 +1,14 @@
-import { Injectable } from '@nestjs/common';
-import { AdvertisingService } from '@/modules/advertising/advertising.service';
-import { FilterAdvertisingDto } from '@/modules/advertising/dto/filter-advertising.dto';
+import {Injectable} from '@nestjs/common';
+import {AdvertisingService} from '@/modules/advertising/advertising.service';
 import {PRODUCTS} from "@/shared/constants/products";
 
 @Injectable()
 export class CsvService {
-    constructor(private readonly advertisingService: AdvertisingService) {}
+    constructor(private readonly advertisingService: AdvertisingService) {
+    }
 
-    async findManyCsv(filters: FilterAdvertisingDto): Promise<string> {
-        const items = await this.advertisingService.findMany(filters);
+    async findManyCsv(): Promise<string> {
+        const items = await this.advertisingService.findMany();
         const header = [
             'campaignId',
             'sku',

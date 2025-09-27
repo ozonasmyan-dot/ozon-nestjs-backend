@@ -1,4 +1,4 @@
-export class CreateAdvertisingDto {
+export class CreateDto {
   campaignId: string;
   sku: string;
   product: string;
