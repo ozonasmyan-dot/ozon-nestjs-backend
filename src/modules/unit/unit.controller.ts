@@ -21,4 +21,11 @@ export class UnitController {
   aggregateCsv(@Query() dto: AggregateUnitDto) {
     return this.unitCsvService.aggregateCsv(dto);
   }
+
+  @Get('csv/orders')
+  @Header('Content-Type', 'text/csv')
+  @Header('Content-Disposition', 'attachment; filename="unit-orders.csv"')
+  aggregateOrdersCsv(@Query() dto: AggregateUnitDto) {
+    return this.unitCsvService.aggregateOrdersCsv(dto);
+  }
 }
