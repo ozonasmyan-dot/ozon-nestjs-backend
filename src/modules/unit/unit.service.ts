@@ -49,5 +49,4 @@ export class UnitService {
             ? items.filter((item) => statuses.includes(item.status))
             : items;
     }
-
 }

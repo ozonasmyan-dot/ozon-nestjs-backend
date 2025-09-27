@@ -48,10 +48,10 @@ export class UnitCsvService {
                 const key = `${item.sku}_${date}`;
                 const current =
                     grouped.get(key) ?? {
+                        sku: item.product,
                         ordersMoney: 0,
                         count: 0,
                         date,
-                        sku: item.sku,
                     };
 
                 current.ordersMoney += item.price;
