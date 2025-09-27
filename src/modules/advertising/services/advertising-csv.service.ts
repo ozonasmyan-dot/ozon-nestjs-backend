@@ -5,7 +5,7 @@ import {PRODUCTS} from "@/shared/constants/products";
 
 @Injectable()
 export class AdvertisingCsvService {
-    private synchronizationPromise: Promise<void> | null = null;
+    private synchronizationPromise: Promise<string> = null;
 
     constructor(private readonly advertisingService: AdvertisingService) {}
 
