@@ -1,58 +1,89 @@
-import { Injectable } from '@nestjs/common';
-import { AdvertisingService } from '@/modules/advertising/advertising.service';
-import { FilterAdvertisingDto } from '@/modules/advertising/dto/filter-advertising.dto';
-import {PRODUCTS} from "@/shared/constants/products";
+import {Injectable} from '@nestjs/common';
+import {UnitService} from '@/modules/unit/unit.service';
+import {AggregateUnitDto} from '@/modules/unit/dto/aggregate-unit.dto';
+import dayjs from 'dayjs';
 
 @Injectable()
-export class AdvertisingCsvService {
-    constructor(private readonly advertisingService: AdvertisingService) {}
+export class UnitCsvService {
+    constructor(private readonly unitService: UnitService) {
+    }
 
-    async findManyCsv(filters: FilterAdvertisingDto): Promise<string> {
-        const items = await this.advertisingService.findMany(filters);
+    async aggregateCsv(dto: AggregateUnitDto): Promise<string> {
+        const items = await this.unitService.aggregate(dto);
         const header = [
-            'campaignId',
-            'sku',
-            'type',
-            'views',
-            'moneySpent',
-            'toCart',
-            'competitiveBid',
-            'weeklyBudget',
-            'minBidCpo',
-            'minBidCpoTop',
-            'avgBid',
-            'empty',
-            'clicks',
-            'date',
+            'product',
+            'orderId',
+            'orderNumber',
+            'postingNumber',
+            'statusOzon',
+            'createdAt',
+            'price',
+            'currencyCode',
+            'status',
+            'margin',
+            'costPrice',
+            'totalServices',
+            'advertisingPerUnit',
         ];
+        const rows = items.map((item) => {
+            return [
+                item.product,
+                item.orderId,
+                item.orderNumber,
+                item.postingNumber,
+                item.statusOzon,
+                dayjs(item.createdAt).format('YYYY-MM'),
+                item.price,
+                item.currencyCode,
+                item.status,
+                item.margin,
+                item.costPrice,
+                item.totalServices,
+                item.advertisingPerUnit,
+            ].join(',');
+        });
+        return [header.join(','), ...rows].join('\n');
+    }
 
-        const rows = items.map((item) =>
-            [
-                item.campaignId,
-                // @ts-ignore
-                PRODUCTS[item.sku as keyof typeof PRODUCTS] ?? item.sku,
-                item.type === 'PPC' ? 'Оплата за клик' : 'Оплата за заказ',
-                0,
-                item.moneySpent,
-                item.toCart,
-                item.competitiveBid,
-                item.weeklyBudget,
-                item.minBidCpo,
-                item.minBidCpoTop,
-                item.avgBid,
-                '-',
-                item.clicks,
-                item.date,
-            ]
-                .map((value) => {
-                    if (value === undefined || value === null) {
-                        return '';
-                    }
+    async aggregateOrdersCsv(dto: AggregateUnitDto): Promise<string> {
+        const items = await this.unitService.aggregate(dto);
+        const header = ['date', 'sku', 'ordersMoney', 'count'];
 
-                    return String(value);
-                })
-                .join(','),
-        );
+        const grouped = new Map<
+            string,
+            { date: string; sku: string; ordersMoney: number; count: number; }
+        >();
+
+        items.forEach((item) => {
+            const date = dayjs(item.createdAt).format('YYYY-MM-DD');
+            const key = `${item.sku}_${date}`;
+            const current =
+                grouped.get(key) ?? {
+                    date,
+                    sku: item.product,
+                    ordersMoney: 0,
+                    count: 0,
+                };
+
+            current.ordersMoney += item.price;
+            current.count += 1;
+
+            grouped.set(key, current);
+        });
+
+        const rows = Array.from(grouped.values())
+            .sort((a, b) => {
+                const dateDiff = a.date.localeCompare(b.date);
+                if (dateDiff !== 0) {
+                    return dateDiff;
+                }
+                return a.sku.localeCompare(b.sku);
+            })
+            .map((item) =>
+                [item.date, item.sku, item.ordersMoney, item.count]
+                    .map((value) => String(value))
+                    .join(','),
+            );
 
         return [header.join(','), ...rows].join('\n');
     }

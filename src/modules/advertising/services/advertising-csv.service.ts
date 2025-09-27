@@ -12,16 +12,18 @@ export class AdvertisingCsvService {
         const header = [
             'campaignId',
             'sku',
-            'date',
             'type',
-            'clicks',
-            'toCart',
-            'avgBid',
+            'views',
             'moneySpent',
-            'minBidCpo',
-            'minBidCpoTop',
+            'toCart',
             'competitiveBid',
             'weeklyBudget',
+            'minBidCpo',
+            'minBidCpoTop',
+            'avgBid',
+            'empty',
+            'clicks',
+            'date',
         ];
 
         const rows = items.map((item) =>
@@ -29,16 +31,18 @@ export class AdvertisingCsvService {
                 item.campaignId,
                 // @ts-ignore
                 PRODUCTS[item.sku as keyof typeof PRODUCTS] ?? item.sku,
-                item.date,
-                item.type,
-                item.clicks,
-                item.toCart,
-                item.avgBid,
+                item.type === 'PPC' ? 'Оплата за клик' : 'Оплата за заказ',
+                0,
                 item.moneySpent,
-                item.minBidCpo,
-                item.minBidCpoTop,
+                item.toCart,
                 item.competitiveBid,
                 item.weeklyBudget,
+                item.minBidCpo,
+                item.minBidCpoTop,
+                item.avgBid,
+                '-',
+                item.clicks,
+                item.date,
             ]
                 .map((value) => {
                     if (value === undefined || value === null) {
