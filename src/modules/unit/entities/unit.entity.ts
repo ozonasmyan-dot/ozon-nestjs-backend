@@ -13,6 +13,7 @@ export class UnitEntity extends OrderEntity {
   costPrice: number;
   totalServices: number;
   margin: number;
+  advertisingPerUnit: number;
   private statusOzon: OzonStatus | string;
 
   constructor(partial: Partial<UnitEntity>) {

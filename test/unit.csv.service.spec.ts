@@ -5,6 +5,7 @@ import { TransactionRepository } from "@/modules/transaction/transaction.reposit
 import { UnitFactory } from "@/modules/unit/unit.factory";
 import ordersFixture from "@/shared/data/orders.fixture";
 import dayjs from "dayjs";
+import { AdvertisingRepository } from "@/modules/advertising/advertising.repository";
 
 describe("UnitCsvService", () => {
   let service: UnitService;
@@ -35,10 +36,14 @@ describe("UnitCsvService", () => {
           ),
         ),
     } as unknown as TransactionRepository;
+    const advertisingRepository = {
+      findBySkusAndDateRange: jest.fn().mockResolvedValue([]),
+    } as unknown as AdvertisingRepository;
     service = new UnitService(
       orderRepository,
       transactionRepository,
       new UnitFactory(),
+      advertisingRepository,
     );
     csvService = new UnitCsvService(service);
   });
