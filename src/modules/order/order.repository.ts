@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
-import { CreateOrderDto } from './dto/create-order.dto';
+import { CreateDto } from './dto/create.dto';
 import { Prisma, Order } from '@prisma/client';
 
 @Injectable()
@@ -20,7 +20,7 @@ export class OrderRepository {
     });
   }
 
-  upsert(data: CreateOrderDto): Promise<Order> {
+  upsert(data: CreateDto): Promise<Order> {
     return this.prisma.order.upsert({
       where: { postingNumber: data.postingNumber },
       create: data,

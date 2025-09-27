@@ -1,4 +1,4 @@
-export class CreateOrderDto {
+export class CreateDto {
   product: string;
   orderId: string;
   orderNumber: string;

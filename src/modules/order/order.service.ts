@@ -1,8 +1,8 @@
 import { Injectable } from "@nestjs/common";
 import { GetPostingsDto } from "@/api/seller/dto/get-postings.dto";
 import { PostingApiService } from "@/api/seller/posting.service";
-import { OrderRepository } from "./order.repository";
-import { OrderEntity } from "./entities/order.entity";
+import { OrderRepository } from "@/modules/order/order.repository";
+import { OrderEntity } from "@/modules/order/entities/order.entity";
 
 @Injectable()
 export class OrderService {
@@ -36,7 +36,7 @@ export class OrderService {
         createdAt: new Date(posting.created_at ?? Date.now()),
         inProcessAt: new Date(posting.in_process_at ?? Date.now()),
         sku: String(product.sku ?? ""),
-        oldPrice: Number(financial.old_price ?? product.old_price ?? 0),
+        oldPrice: Number(financial.old_price ?? 0),
         price: Number(financial.price ?? product.price ?? 0),
         currencyCode: financial.currency_code ?? "RUB",
       });
@@ -45,7 +45,8 @@ export class OrderService {
     });
 
     await this.orderRepository.transaction(operations as any);
-    return postings.length;
+
+    return this.orderRepository.findAll();
   }
 
   async updateNotDelivered() {
