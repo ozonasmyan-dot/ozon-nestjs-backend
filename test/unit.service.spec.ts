@@ -104,10 +104,13 @@ describe("UnitService", () => {
 
   it("requests advertising statistics for the aggregated period", async () => {
     await service.aggregate({});
-    expect(advertisingRepository.findBySkusAndDateRange).toHaveBeenCalledWith(
-      ["1828048543"],
-      "2024-01-01",
-      "2024-01-31",
+    const [skus, dateFrom, dateTo] =
+      advertisingRepository.findBySkusAndDateRange.mock.calls[0];
+
+    expect(new Set(skus)).toEqual(
+      new Set(["1828048543", "сумка_кросбоди_черная"]),
     );
+    expect(dateFrom).toBe("2024-01-01");
+    expect(dateTo).toBe("2024-01-31");
   });
 });

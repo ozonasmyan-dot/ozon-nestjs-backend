@@ -9,6 +9,57 @@ import {buildOrderWhere} from "./utils/order-filter.utils";
 import {UnitFactory} from "./unit.factory";
 import {AdvertisingRepository} from "@/modules/advertising/advertising.repository";
 import {money} from "@/shared/utils/money.utils";
+import {PRODUCTS} from "@/shared/constants/products";
+
+const PRODUCT_ENTRIES = Object.entries(PRODUCTS);
+
+const CANONICAL_SKU_BY_ALIAS = new Map<string, string>();
+const ORIGINAL_SKU_BY_CANONICAL = new Map<string, string>();
+
+PRODUCT_ENTRIES.forEach(([key, value]) => {
+    const canonical = value.trim();
+    CANONICAL_SKU_BY_ALIAS.set(key, canonical);
+    CANONICAL_SKU_BY_ALIAS.set(canonical, canonical);
+    ORIGINAL_SKU_BY_CANONICAL.set(canonical, key);
+});
+
+const trimNullable = (value?: string | null): string | null => {
+    if (typeof value !== "string") {
+        return null;
+    }
+    const trimmed = value.trim();
+    return trimmed.length ? trimmed : null;
+};
+
+const normalizeSku = (value?: string | null): string | null => {
+    const trimmed = trimNullable(value);
+    if (!trimmed) {
+        return null;
+    }
+    return CANONICAL_SKU_BY_ALIAS.get(trimmed) ?? trimmed;
+};
+
+const collectSkuVariants = (
+    ...values: Array<string | null | undefined>
+): string[] => {
+    const variants = new Set<string>();
+    values.forEach((value) => {
+        const trimmed = trimNullable(value);
+        if (!trimmed) {
+            return;
+        }
+        variants.add(trimmed);
+        const canonical = CANONICAL_SKU_BY_ALIAS.get(trimmed);
+        if (canonical) {
+            variants.add(canonical);
+            const original = ORIGINAL_SKU_BY_CANONICAL.get(canonical);
+            if (original) {
+                variants.add(original);
+            }
+        }
+    });
+    return Array.from(variants);
+};
 
 @Injectable()
 export class UnitService {
@@ -44,14 +95,15 @@ export class UnitService {
             string,
             { sku: string; month: string; count: number }
         >();
-        const skus = new Set<string>();
+        const skusForAdvertising = new Set<string>();
         let minMonthStart: dayjs.Dayjs | null = null;
         let maxMonthEnd: dayjs.Dayjs | null = null;
 
         orders.forEach((order) => {
             const orderDate = dayjs(order.createdAt);
-            const sku = order.sku?.trim();
-            if (!orderDate.isValid() || !sku) {
+            const canonicalSku =
+                normalizeSku(order.sku) ?? normalizeSku(order.product);
+            if (!orderDate.isValid() || !canonicalSku) {
                 return;
             }
 
@@ -66,33 +118,35 @@ export class UnitService {
             }
 
             const month = orderDate.format("YYYY-MM");
-            const key = `${sku}_${month}`;
+            const key = `${canonicalSku}_${month}`;
             const current = skuMonthCounts.get(key) ?? {
-                sku,
+                sku: canonicalSku,
                 month,
                 count: 0,
             };
             current.count += 1;
             skuMonthCounts.set(key, current);
-            skus.add(sku);
+            collectSkuVariants(order.sku, order.product).forEach((variant) =>
+                skusForAdvertising.add(variant),
+            );
         });
 
         const advertisingTotals = new Map<string, number>();
-        if (skus.size && minMonthStart && maxMonthEnd) {
+        if (skusForAdvertising.size && minMonthStart && maxMonthEnd) {
             const ads = await this.advertisingRepository.findBySkusAndDateRange(
-                Array.from(skus),
+                Array.from(skusForAdvertising),
                 minMonthStart.format("YYYY-MM-DD"),
                 maxMonthEnd.format("YYYY-MM-DD"),
             );
 
             ads.forEach((ad) => {
                 const adDate = dayjs(ad.date);
-                const sku = ad.sku?.trim();
-                if (!adDate.isValid() || !sku) {
+                const canonicalSku = normalizeSku(ad.sku);
+                if (!adDate.isValid() || !canonicalSku) {
                     return;
                 }
                 const month = adDate.format("YYYY-MM");
-                const key = `${sku}_${month}`;
+                const key = `${canonicalSku}_${month}`;
                 advertisingTotals.set(
                     key,
                     (advertisingTotals.get(key) ?? 0) + ad.moneySpent,
@@ -121,8 +175,9 @@ export class UnitService {
                 (num) => byNumber.get(num) ?? [],
             );
             const month = dayjs(order.createdAt).format("YYYY-MM");
-            const sku = order.sku?.trim();
-            const key = sku ? `${sku}_${month}` : null;
+            const canonicalSku =
+                normalizeSku(order.sku) ?? normalizeSku(order.product);
+            const key = canonicalSku ? `${canonicalSku}_${month}` : null;
             const advertisingPerUnit = key
                 ? advertisingPerUnitByKey.get(key) ?? 0
                 : 0;
