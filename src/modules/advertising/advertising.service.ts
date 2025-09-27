@@ -9,6 +9,7 @@ import customParseFormat from 'dayjs/plugin/customParseFormat';
 import dayjs from "dayjs";
 import {CpoParserService} from "@/modules/advertising/services/cpo-parser.service";
 import {getDatesUntilTodayUTC3} from "@/shared/utils/date.utils";
+import {PRODUCTS} from "@/shared/constants/products";
 
 dayjs.extend(customParseFormat);
 
@@ -99,6 +100,8 @@ export class AdvertisingService {
                 await this.advertisingRepository.upsertMany([{
                     campaignId: row.id,
                     sku,
+                    // @ts-ignore
+                    product: PRODUCTS[sku],
                     date: date,
                     type: 'PPC',
                     clicks: parseNumber(row.clicks),
@@ -139,6 +142,7 @@ export class AdvertisingService {
                 await this.advertisingRepository.upsertMany([{
                     campaignId,
                     sku,
+                    product: PRODUCTS[sku],
                     date: dayjs(ad['Дата'], 'DD.MM.YYYY').format('YYYY-MM-DD'),
                     type: 'CPO',
                     clicks: 0,
@@ -156,7 +160,7 @@ export class AdvertisingService {
 
     async sync() {
         const latestDate = await this.advertisingRepository.findLatestDate();
-        const startDate = latestDate ?? '2024-10-01';
+        const startDate = latestDate ?? '2025-09-25';
         const dates = getDatesUntilTodayUTC3(startDate);
 
         for (const date of dates) {

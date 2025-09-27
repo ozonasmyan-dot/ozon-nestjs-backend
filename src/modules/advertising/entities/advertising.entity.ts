@@ -5,6 +5,7 @@ type AdvertisingConstructor = Partial<Advertising>;
 export class AdvertisingEntity implements Advertising {
   id: string;
   campaignId: string;
+  product: string;
   sku: string;
   date: string;
   type: string;

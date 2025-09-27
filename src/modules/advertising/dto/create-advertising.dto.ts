@@ -1,6 +1,7 @@
 export class CreateAdvertisingDto {
   campaignId: string;
   sku: string;
+  product: string;
   date: string;
   type: 'PPC' | 'CPO';
   clicks: number;

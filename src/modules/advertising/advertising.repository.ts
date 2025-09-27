@@ -63,6 +63,7 @@ export class AdvertisingRepository {
           campaignId: item.campaignId,
           sku: item.sku,
           date: item.date,
+          product: item.product,
           type: item.type,
           clicks: item.clicks,
           toCart: item.toCart,
