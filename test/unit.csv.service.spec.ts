@@ -6,18 +6,12 @@ import { UnitFactory } from "@/modules/unit/unit.factory";
 import ordersFixture from "@/shared/data/orders.fixture";
 import dayjs from "dayjs";
 import { AdvertisingRepository } from "@/modules/advertising/advertising.repository";
-import { OrderService } from "@/modules/order/order.service";
-import { TransactionService } from "@/modules/transaction/transaction.service";
-import { AdvertisingService } from "@/modules/advertising/advertising.service";
 
 describe("UnitCsvService", () => {
   let service: UnitService;
   let csvService: UnitCsvService;
   let orders: any[];
   let transactions: any[];
-  let orderService: jest.Mocked<Pick<OrderService, "sync">>;
-  let transactionService: jest.Mocked<Pick<TransactionService, "sync">>;
-  let advertisingService: jest.Mocked<Pick<AdvertisingService, "sync">>;
 
   beforeAll(() => {
     orders = ordersFixture.map((o) => ({
@@ -58,22 +52,7 @@ describe("UnitCsvService", () => {
       advertisingRepository,
     );
 
-    orderService = {
-      sync: jest.fn().mockResolvedValue(0),
-    } as unknown as jest.Mocked<Pick<OrderService, "sync">>;
-    transactionService = {
-      sync: jest.fn().mockResolvedValue(0),
-    } as unknown as jest.Mocked<Pick<TransactionService, "sync">>;
-    advertisingService = {
-      sync: jest.fn().mockResolvedValue("OK"),
-    } as unknown as jest.Mocked<Pick<AdvertisingService, "sync">>;
-
-    csvService = new UnitCsvService(
-      service,
-      orderService,
-      transactionService,
-      advertisingService,
-    );
+    csvService = new UnitCsvService(service);
   });
 
   it("aggregates units by date and sku regardless of status", async () => {
@@ -118,37 +97,17 @@ describe("UnitCsvService", () => {
     const expectedCsv = ["date,sku,ordersMoney,count", ...expectedRows].join("\n");
 
     expect(csv).toBe(expectedCsv);
-    expect(orderService.sync).toHaveBeenCalled();
-    expect(transactionService.sync).toHaveBeenCalled();
-    expect(advertisingService.sync).toHaveBeenCalled();
   });
 
   it("returns only header when there are no units", async () => {
     const emptyService = {
       aggregate: jest.fn().mockResolvedValue([]),
     } as unknown as UnitService;
-    const emptyOrderService = {
-      sync: jest.fn().mockResolvedValue(0),
-    } as unknown as jest.Mocked<Pick<OrderService, "sync">>;
-    const emptyTransactionService = {
-      sync: jest.fn().mockResolvedValue(0),
-    } as unknown as jest.Mocked<Pick<TransactionService, "sync">>;
-    const emptyAdvertisingService = {
-      sync: jest.fn().mockResolvedValue("OK"),
-    } as unknown as jest.Mocked<Pick<AdvertisingService, "sync">>;
-    const emptyCsvService = new UnitCsvService(
-      emptyService,
-      emptyOrderService,
-      emptyTransactionService,
-      emptyAdvertisingService,
-    );
+    const emptyCsvService = new UnitCsvService(emptyService);
 
     const csv = await emptyCsvService.aggregateOrdersCsv({});
 
     expect(csv).toBe("date,sku,ordersMoney,count");
-    expect(emptyOrderService.sync).toHaveBeenCalled();
-    expect(emptyTransactionService.sync).toHaveBeenCalled();
-    expect(emptyAdvertisingService.sync).toHaveBeenCalled();
   });
 
   it("includes advertisingPerUnit column in unit export", async () => {
