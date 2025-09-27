@@ -157,6 +157,6 @@ export class AdvertisingService {
 
         await this.saveCPO();
 
-        return 'OK';
+        return this.findMany();
     }
 }
