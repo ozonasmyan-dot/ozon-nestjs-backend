@@ -5,9 +5,24 @@ import {PRODUCTS} from "@/shared/constants/products";
 
 @Injectable()
 export class AdvertisingCsvService {
+    private synchronizationPromise: Promise<void> | null = null;
+
     constructor(private readonly advertisingService: AdvertisingService) {}
 
+    private async ensureSynchronized(): Promise<void> {
+        if (!this.synchronizationPromise) {
+            this.synchronizationPromise = this.advertisingService
+                .sync()
+                .finally(() => {
+                    this.synchronizationPromise = null;
+                });
+        }
+
+        await this.synchronizationPromise;
+    }
+
     async findManyCsv(filters: FilterAdvertisingDto): Promise<string> {
+        await this.ensureSynchronized();
         const items = await this.advertisingService.findMany(filters);
         const header = [
             'campaignId',

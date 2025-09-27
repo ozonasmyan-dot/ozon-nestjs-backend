@@ -9,5 +9,6 @@ import { OrderRepository } from './order.repository';
   imports: [PrismaModule, SellerApiModule],
   controllers: [OrderController],
   providers: [OrderService, OrderRepository],
+  exports: [OrderService],
 })
 export class OrderModule {}

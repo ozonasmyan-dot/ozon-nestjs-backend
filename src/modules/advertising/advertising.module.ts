@@ -11,7 +11,14 @@ import {AdvertisingCsvService} from "@/modules/advertising/services/advertising-
 @Module({
     imports: [PrismaModule, PerformanceApiModule],
     controllers: [AdvertisingController],
-    providers: [AdvertisingApiService, AdvertisingService, AdvertisingRepository, CpoParserService, AdvertisingCsvService],
+    providers: [
+        AdvertisingApiService,
+        AdvertisingService,
+        AdvertisingRepository,
+        CpoParserService,
+        AdvertisingCsvService,
+    ],
+    exports: [AdvertisingService],
 })
 export class AdvertisingModule {
 }
