@@ -1,81 +1,58 @@
-import {Injectable} from '@nestjs/common';
-import {UnitService} from '@/modules/unit/unit.service';
-import {AggregateUnitDto} from '@/modules/unit/dto/aggregate-unit.dto';
-import dayjs from 'dayjs';
+import { Injectable } from '@nestjs/common';
+import { AdvertisingService } from '@/modules/advertising/advertising.service';
+import { FilterAdvertisingDto } from '@/modules/advertising/dto/filter-advertising.dto';
+import {PRODUCTS} from "@/shared/constants/products";
 
 @Injectable()
-export class UnitCsvService {
-    constructor(private readonly unitService: UnitService) {
-    }
+export class AdvertisingCsvService {
+    constructor(private readonly advertisingService: AdvertisingService) {}
 
-    async aggregateCsv(dto: AggregateUnitDto): Promise<string> {
-        const items = await this.unitService.aggregate(dto);
+    async findManyCsv(filters: FilterAdvertisingDto): Promise<string> {
+        const items = await this.advertisingService.findMany(filters);
         const header = [
-            'product',
-            'postingNumber',
-            'createdAt',
-            'status',
-            'margin',
-            'costPrice',
-            'totalServices',
-            'price',
-            'advertisingPerUnit',
+            'campaignId',
+            'sku',
+            'type',
+            'views',
+            'moneySpent',
+            'toCart',
+            'competitiveBid',
+            'weeklyBudget',
+            'minBidCpo',
+            'minBidCpoTop',
+            'avgBid',
+            'empty',
+            'clicks',
+            'date',
         ];
-        const rows = items.map((item) => {
-            return [
-                item.product,
-                item.postingNumber,
-                dayjs(item.createdAt).format('YYYY-MM'),
-                item.status,
-                item.margin,
-                item.costPrice,
-                item.totalServices,
-                item.price,
-                item.advertisingPerUnit,
-            ].join(',');
-        });
-        return [header.join(','), ...rows].join('\n');
-    }
 
-    async aggregateOrdersCsv(dto: AggregateUnitDto): Promise<string> {
-        const items = await this.unitService.aggregate(dto);
-        const header = ['date', 'sku', 'ordersMoney', 'count'];
+        const rows = items.map((item) =>
+            [
+                item.campaignId,
+                // @ts-ignore
+                PRODUCTS[item.sku as keyof typeof PRODUCTS] ?? item.sku,
+                item.type === 'PPC' ? 'Оплата за клик' : 'Оплата за заказ',
+                0,
+                item.moneySpent,
+                item.toCart,
+                item.competitiveBid,
+                item.weeklyBudget,
+                item.minBidCpo,
+                item.minBidCpoTop,
+                item.avgBid,
+                '-',
+                item.clicks,
+                item.date,
+            ]
+                .map((value) => {
+                    if (value === undefined || value === null) {
+                        return '';
+                    }
 
-        const grouped = new Map<
-            string,
-            { date: string; sku: string; ordersMoney: number; count: number; }
-        >();
-
-        items.forEach((item) => {
-            const date = dayjs(item.createdAt).format('YYYY-MM-DD');
-            const key = `${item.sku}_${date}`;
-            const current =
-                grouped.get(key) ?? {
-                    date,
-                    sku: item.product,
-                    ordersMoney: 0,
-                    count: 0,
-                };
-
-            current.ordersMoney += item.price;
-            current.count += 1;
-
-            grouped.set(key, current);
-        });
-
-        const rows = Array.from(grouped.values())
-            .sort((a, b) => {
-                const dateDiff = a.date.localeCompare(b.date);
-                if (dateDiff !== 0) {
-                    return dateDiff;
-                }
-                return a.sku.localeCompare(b.sku);
-            })
-            .map((item) =>
-                [item.date, item.sku, item.ordersMoney, item.count]
-                    .map((value) => String(value))
-                    .join(','),
-            );
+                    return String(value);
+                })
+                .join(','),
+        );
 
         return [header.join(','), ...rows].join('\n');
     }
