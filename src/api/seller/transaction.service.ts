@@ -74,10 +74,6 @@ export class TransactionApiService {
     }
 
     private normalize(t: any): TransactionEntity[] {
-        if (ADS_EXCLUDED_OPERATION_TYPES.has(t.operation_type)) {
-            return [];
-        }
-
         const baseDate = dayjs(t.operation_date, "YYYY-MM-DD HH:mm:ss").toDate();
         const results: TransactionEntity[] = [];
 
@@ -97,16 +93,18 @@ export class TransactionApiService {
                 );
             }
         } else {
-            results.push(
-                new TransactionEntity({
-                    operationId: String(t.operation_id ?? ""),
-                    name: t.operation_type ?? "",
-                    date: baseDate,
-                    postingNumber: t.posting?.posting_number,
-                    price: Number(t.amount ?? 0),
-                    sku: t.items[0]?.sku ?? ''
-                })
-            );
+            if (!ADS_EXCLUDED_OPERATION_TYPES.has(t.operation_type)) {
+                results.push(
+                    new TransactionEntity({
+                        operationId: String(t.operation_id ?? ""),
+                        name: t.operation_type ?? "",
+                        date: baseDate,
+                        postingNumber: t.posting?.posting_number,
+                        price: Number(t.amount ?? 0),
+                        sku: t.items[0]?.sku ?? ''
+                    })
+                );
+            }
         }
 
         const saleCommission = Number(t.sale_commission ?? 0);
