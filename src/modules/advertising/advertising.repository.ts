@@ -36,6 +36,7 @@ export class AdvertisingRepository {
           product: item.product,
           type: item.type,
           clicks: item.clicks,
+          views: item.views,
           toCart: item.toCart,
           avgBid: item.avgBid,
           minBidCpo: item.minBidCpo,
@@ -45,6 +46,7 @@ export class AdvertisingRepository {
           moneySpent: item.moneySpent,
         },
         update: {
+          views: item.views,
           clicks: item.clicks,
           toCart: item.toCart,
           avgBid: item.avgBid,

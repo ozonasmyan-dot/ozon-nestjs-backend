@@ -6,6 +6,7 @@ export class CreateDto {
   type: 'PPC' | 'CPO';
   clicks: number;
   toCart: number;
+  views: number;
   avgBid: number;
   minBidCpo: number;
   minBidCpoTop: number;

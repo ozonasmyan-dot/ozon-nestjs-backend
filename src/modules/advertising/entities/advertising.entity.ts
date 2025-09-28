@@ -11,6 +11,7 @@ export class AdvertisingEntity implements Advertising {
   type: string;
   clicks: number;
   toCart: number;
+  views: number;
   avgBid: number;
   moneySpent: number;
   minBidCpo: number;

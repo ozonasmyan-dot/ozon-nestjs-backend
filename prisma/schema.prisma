@@ -46,6 +46,7 @@ model Advertising {
   type           String
   clicks         Int
   toCart         Int
+  views          Int
   avgBid         Float
   competitiveBid Float
   minBidCpo      Float
