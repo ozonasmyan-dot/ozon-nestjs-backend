@@ -16,6 +16,7 @@ model Transaction {
   sku           String
   price         Float
   unidentified  Boolean  @default(false)
+  isProduct     Boolean
 
   @@unique([name, operationId])
 }
