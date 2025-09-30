@@ -7,10 +7,9 @@ export interface EconomyContext {
   services: Service[];
   status: OzonStatus;
   product: string;
-  priceDecimal: Decimal;
-  totalServices: Decimal;
+  totalServices: number;
   hasSalesCommission: boolean;
-  salesCommissionSum: Decimal;
+  salesCommissionSum: number;
   returnPVZ: number;
   advertisingPerUnit: number
 }

@@ -23,7 +23,9 @@ export class UnitEntity extends OrderEntity {
     const services = this.buildServices();
     const economy = this.calculateEconomy(services);
 
-    this.advertisingPerUnit = Decimal(partial.advertisingPerUnit).neg().toNumber() ?? 0;
+    this.advertisingPerUnit = Decimal(this.advertisingPerUnit || 0).isZero()
+        ? 0
+        : Decimal(this.advertisingPerUnit).neg().toNumber();
     this.statusCustom = economy.statusCustom;
     this.costPrice = economy.costPrice;
     this.totalServices = economy.totalServices;
@@ -35,10 +37,6 @@ export class UnitEntity extends OrderEntity {
       name: tx.name,
       price: tx.price,
     }));
-  }
-
-  private getPriceDecimal(): Decimal {
-    return money(this.price);
   }
 
   private getTotalServices(services: Service[]): Decimal {
@@ -67,21 +65,19 @@ export class UnitEntity extends OrderEntity {
   }
 
   private calculateEconomy(services: Service[]): EconomyResult {
-    const priceDecimal = this.getPriceDecimal();
-    const totalServices = this.getTotalServices(services);
+    const totalServices = this.getTotalServices(services).toNumber();
     const hasSalesCommission = this.hasSalesCommission(services);
-    const salesCommissionSum = this.getSalesCommissionSum(services);
+    const salesCommissionSum = this.getSalesCommissionSum(services).toNumber();
     const returnPVZ = this.findReturnPVZ(services);
-    const advertisingPerUnit = this.advertisingPerUnit;
-
-    console.log(advertisingPerUnit);
+    const advertisingPerUnit = Decimal(this.advertisingPerUnit || 0).isZero()
+        ? 0
+        : Decimal(this.advertisingPerUnit).neg().toNumber();
 
     const ctx: EconomyContext = {
       price: this.price,
       services,
       status: this.status as OzonStatus,
       product: this.sku,
-      priceDecimal,
       totalServices,
       hasSalesCommission,
       salesCommissionSum,
@@ -94,8 +90,8 @@ export class UnitEntity extends OrderEntity {
 
     return {
       statusCustom,
-      costPrice: costPrice.toDecimalPlaces(2).neg().toNumber(),
-      totalServices: totalServices.toDecimalPlaces(2).toNumber(),
+      costPrice: costPrice.toDecimalPlaces(2).toNumber(),
+      totalServices: totalServices,
       margin: margin.toDecimalPlaces(2).toNumber(),
     };
   }
