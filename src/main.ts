@@ -7,7 +7,7 @@ async function bootstrap() {
 
     app.useGlobalFilters(new OzonAxiosExceptionFilter());
 
-    await app.listen(3005);
+    await app.listen(3004);
 }
 
 bootstrap();

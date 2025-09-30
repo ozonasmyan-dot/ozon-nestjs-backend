@@ -23,7 +23,7 @@ export class UnitEntity extends OrderEntity {
     const services = this.buildServices();
     const economy = this.calculateEconomy(services);
 
-    this.advertisingPerUnit = partial.advertisingPerUnit ?? 0;
+    this.advertisingPerUnit = Decimal(partial.advertisingPerUnit).neg().toNumber() ?? 0;
     this.statusCustom = economy.statusCustom;
     this.costPrice = economy.costPrice;
     this.totalServices = economy.totalServices;
@@ -45,7 +45,7 @@ export class UnitEntity extends OrderEntity {
     return (services.reduce(
       (sum, { price }) => sum.plus(money(price)),
       new Decimal(0),
-    ).abs());
+    ));
   }
 
   private hasSalesCommission(services: Service[]): boolean {
@@ -74,6 +74,8 @@ export class UnitEntity extends OrderEntity {
     const returnPVZ = this.findReturnPVZ(services);
     const advertisingPerUnit = this.advertisingPerUnit;
 
+    console.log(advertisingPerUnit);
+
     const ctx: EconomyContext = {
       price: this.price,
       services,
@@ -92,7 +94,7 @@ export class UnitEntity extends OrderEntity {
 
     return {
       statusCustom,
-      costPrice: costPrice.toDecimalPlaces(2).toNumber(),
+      costPrice: costPrice.toDecimalPlaces(2).neg().toNumber(),
       totalServices: totalServices.toDecimalPlaces(2).toNumber(),
       margin: margin.toDecimalPlaces(2).toNumber(),
     };
