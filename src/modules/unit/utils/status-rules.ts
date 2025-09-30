@@ -38,7 +38,7 @@ const STATUS_RULES: Record<OzonStatus, StatusRule> = {
         if (hasSalesCommission) {
             if (salesCommissionSum.isNegative()) {
                 const costPrice = money(SBS_MAP[product]);
-                const margin = priceDecimal.minus(costPrice).minus(advertisingPerUnit).minus(totalServices.abs());
+                const margin = priceDecimal.minus(costPrice).minus(advertisingPerUnit).minus(totalServices);
                 return {statusCustom: CustomStatus.Delivered, costPrice, margin};
             }
             return {

@@ -42,10 +42,10 @@ export class UnitEntity extends OrderEntity {
   }
 
   private getTotalServices(services: Service[]): Decimal {
-    return services.reduce(
+    return (services.reduce(
       (sum, { price }) => sum.plus(money(price)),
       new Decimal(0),
-    );
+    ).abs());
   }
 
   private hasSalesCommission(services: Service[]): boolean {
