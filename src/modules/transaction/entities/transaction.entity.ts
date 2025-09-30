@@ -9,6 +9,7 @@ export class TransactionEntity implements Transaction {
   sku: string | null;
   price: number;
   unidentified: boolean;
+  isProduct: boolean;
 
   constructor(partial: Partial<Transaction>) {
     Object.assign(this, partial);

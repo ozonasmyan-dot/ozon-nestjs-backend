@@ -5,4 +5,5 @@ export class CreateDto {
   postingNumber?: string;
   sku?: string | number;
   price: number;
+  isProduct: boolean;
 }
