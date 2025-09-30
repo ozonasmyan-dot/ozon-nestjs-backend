@@ -1,17 +1,16 @@
 import {Injectable} from '@nestjs/common';
 import {UnitService} from '@/modules/unit/unit.service';
-import {AggregateUnitDto} from '@/modules/unit/dto/aggregate-unit.dto';
 import dayjs from 'dayjs';
 
 @Injectable()
-export class UnitCsvService {
+export class CsvService {
     constructor(
         private readonly unitService: UnitService,
     ) {
     }
 
-    async aggregateCsv(dto: AggregateUnitDto): Promise<string> {
-        const items = await this.unitService.aggregate(dto);
+    async aggregateCsv(): Promise<string> {
+        const items = await this.unitService.aggregate();
         const header = [
             'product',
             'orderId',
@@ -33,7 +32,7 @@ export class UnitCsvService {
                 item.orderId,
                 item.orderNumber,
                 item.postingNumber,
-                item.statusOzon,
+                item.statusCustom,
                 dayjs(item.createdAt).format('YYYY-MM'),
                 item.price,
                 item.currencyCode,
@@ -47,8 +46,8 @@ export class UnitCsvService {
         return [header.join(','), ...rows].join('\n');
     }
 
-    async aggregateOrdersCsv(dto: AggregateUnitDto): Promise<string> {
-        const items = await this.unitService.aggregate(dto);
+    async aggregateOrdersCsv(): Promise<string> {
+        const items = await this.unitService.aggregate();
         const header = ['date', 'sku', 'ordersMoney', 'count'];
 
         const grouped = new Map<

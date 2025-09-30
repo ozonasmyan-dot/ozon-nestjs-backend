@@ -1,7 +1,7 @@
 import { CustomStatus } from './custom-status.enum';
 
 export interface EconomyResult {
-  status: CustomStatus;
+  statusCustom: CustomStatus;
   costPrice: number;
   totalServices: number;
   margin: number;

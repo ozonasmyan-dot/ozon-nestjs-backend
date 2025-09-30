@@ -4,8 +4,7 @@ import { UnitController } from './unit.controller';
 import { PrismaModule } from '@/prisma/prisma.module';
 import { OrderRepository } from '@/modules/order/order.repository';
 import { TransactionRepository } from '@/modules/transaction/transaction.repository';
-import { UnitFactory } from './unit.factory';
-import { UnitCsvService } from '@/modules/unit/services/unit-csv.service';
+import { CsvService } from '@/modules/unit/services/csv.service';
 import { AdvertisingRepository } from '@/modules/advertising/advertising.repository';
 import { OrderModule } from '@/modules/order/order.module';
 import { TransactionModule } from '@/modules/transaction/transaction.module';
@@ -18,10 +17,8 @@ import { AdvertisingModule } from '@/modules/advertising/advertising.module';
     UnitService,
     OrderRepository,
     TransactionRepository,
-    UnitFactory,
-    UnitCsvService,
+    CsvService,
     AdvertisingRepository,
   ],
-  exports: [UnitFactory],
 })
 export class UnitModule {}

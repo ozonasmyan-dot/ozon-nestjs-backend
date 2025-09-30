@@ -4,4 +4,4 @@ import { CustomStatus } from './custom-status.enum';
 
 export type StatusRule = (
   ctx: EconomyContext,
-) => { status: CustomStatus; costPrice: Decimal; margin: Decimal };
+) => { statusCustom: CustomStatus; costPrice: Decimal; margin: Decimal };

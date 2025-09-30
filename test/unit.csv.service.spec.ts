@@ -1,4 +1,4 @@
-import { UnitCsvService } from "@/modules/unit/services/unit-csv.service";
+import { CsvService } from "@/modules/unit/services/csv.service";
 import { UnitService } from "@/modules/unit/unit.service";
 import { OrderRepository } from "@/modules/order/order.repository";
 import { TransactionRepository } from "@/modules/transaction/transaction.repository";
@@ -9,7 +9,7 @@ import { AdvertisingRepository } from "@/modules/advertising/advertising.reposit
 
 describe("UnitCsvService", () => {
   let service: UnitService;
-  let csvService: UnitCsvService;
+  let csvService: CsvService;
   let orders: any[];
   let transactions: any[];
 
@@ -52,7 +52,7 @@ describe("UnitCsvService", () => {
       advertisingRepository,
     );
 
-    csvService = new UnitCsvService(service);
+    csvService = new CsvService(service);
   });
 
   it("aggregates units by date and sku regardless of status", async () => {
@@ -103,7 +103,7 @@ describe("UnitCsvService", () => {
     const emptyService = {
       aggregate: jest.fn().mockResolvedValue([]),
     } as unknown as UnitService;
-    const emptyCsvService = new UnitCsvService(emptyService);
+    const emptyCsvService = new CsvService(emptyService);
 
     const csv = await emptyCsvService.aggregateOrdersCsv({});
 

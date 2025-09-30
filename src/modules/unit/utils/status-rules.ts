@@ -6,23 +6,23 @@ import {CustomStatus} from '../ts/custom-status.enum';
 import {OzonStatus} from '../ts/ozon-status.enum';
 
 const STATUS_RULES: Record<OzonStatus, StatusRule> = {
-    [OzonStatus.Cancelled]: ({returnPVZ, totalServices}) => ({
-        status: returnPVZ !== -1 ? CustomStatus.CancelPVZ : CustomStatus.InstantCancel,
+    [OzonStatus.Cancelled]: ({returnPVZ, totalServices, advertisingPerUnit}) => ({
+        statusCustom: returnPVZ !== -1 ? CustomStatus.CancelPVZ : CustomStatus.InstantCancel,
         costPrice: money(0),
-        margin: totalServices,
+        margin: totalServices.minus(advertisingPerUnit),
     }),
     [OzonStatus.AwaitingDeliver]: ({totalServices}) => ({
-        status: CustomStatus.AwaitingDelivery,
+        statusCustom: CustomStatus.AwaitingDelivery,
         costPrice: money(0),
         margin: totalServices,
     }),
     [OzonStatus.AwaitingPackaging]: ({totalServices}) => ({
-        status: CustomStatus.AwaitingPackaging,
+        statusCustom: CustomStatus.AwaitingPackaging,
         costPrice: money(0),
         margin: totalServices,
     }),
     [OzonStatus.Delivering]: ({totalServices}) => ({
-        status: CustomStatus.Delivering,
+        statusCustom: CustomStatus.Delivering,
         costPrice: money(0),
         margin: totalServices,
     }),
@@ -33,29 +33,30 @@ const STATUS_RULES: Record<OzonStatus, StatusRule> = {
             priceDecimal,
             totalServices,
             product,
+            advertisingPerUnit,
         }) => {
         if (hasSalesCommission) {
             if (salesCommissionSum.isNegative()) {
                 const costPrice = money(SBS_MAP[product]);
-                const margin = priceDecimal.minus(costPrice).plus(totalServices);
-                return {status: CustomStatus.Delivered, costPrice, margin};
+                const margin = priceDecimal.minus(costPrice).plus(totalServices).minus(advertisingPerUnit);
+                return {statusCustom: CustomStatus.Delivered, costPrice, margin};
             }
             return {
-                status: CustomStatus.Return,
+                statusCustom: CustomStatus.Return,
                 costPrice: money(0),
-                margin: totalServices,
+                margin: totalServices.minus(advertisingPerUnit),
             };
         }
         return {
-            status: CustomStatus.AwaitingPayment,
+            statusCustom: CustomStatus.AwaitingPayment,
             costPrice: money(0),
-            margin: totalServices,
+            margin: totalServices.minus(advertisingPerUnit),
         };
     },
 };
 
-const DEFAULT_RULE: StatusRule = ({statusOzon, totalServices}: EconomyContext) => ({
-    status: (statusOzon as unknown as CustomStatus) || CustomStatus.Unknown,
+const DEFAULT_RULE: StatusRule = ({status, totalServices}: EconomyContext) => ({
+    statusCustom: (status as unknown as CustomStatus) || CustomStatus.Unknown,
     costPrice: money(0),
     margin: totalServices,
 });

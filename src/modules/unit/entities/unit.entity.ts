@@ -14,16 +14,17 @@ export class UnitEntity extends OrderEntity {
   totalServices: number;
   margin: number;
   advertisingPerUnit: number;
-  statusOzon: OzonStatus | string;
+  statusCustom: OzonStatus | string;
 
   constructor(partial: Partial<UnitEntity>) {
     super(partial);
     Object.assign(this, partial);
-    this.advertisingPerUnit = partial.advertisingPerUnit ?? 0;
-    this.statusOzon = (partial.status as OzonStatus) ?? "";
+
     const services = this.buildServices();
     const economy = this.calculateEconomy(services);
-    this.status = economy.status;
+
+    this.advertisingPerUnit = partial.advertisingPerUnit ?? 0;
+    this.statusCustom = economy.statusCustom;
     this.costPrice = economy.costPrice;
     this.totalServices = economy.totalServices;
     this.margin = economy.margin;
@@ -71,24 +72,26 @@ export class UnitEntity extends OrderEntity {
     const hasSalesCommission = this.hasSalesCommission(services);
     const salesCommissionSum = this.getSalesCommissionSum(services);
     const returnPVZ = this.findReturnPVZ(services);
+    const advertisingPerUnit = this.advertisingPerUnit;
 
     const ctx: EconomyContext = {
       price: this.price,
       services,
-      statusOzon: this.statusOzon as OzonStatus,
+      status: this.status as OzonStatus,
       product: this.sku,
       priceDecimal,
       totalServices,
       hasSalesCommission,
       salesCommissionSum,
+      advertisingPerUnit,
       returnPVZ,
     };
 
-    const rule = STATUS_RULES[this.statusOzon as OzonStatus] || DEFAULT_RULE;
-    const { status, costPrice, margin } = rule(ctx);
+    const rule = STATUS_RULES[this.status as OzonStatus] || DEFAULT_RULE;
+    const { statusCustom, costPrice, margin } = rule(ctx);
 
     return {
-      status,
+      statusCustom,
       costPrice: costPrice.toDecimalPlaces(2).toNumber(),
       totalServices: totalServices.toDecimalPlaces(2).toNumber(),
       margin: margin.toDecimalPlaces(2).toNumber(),
