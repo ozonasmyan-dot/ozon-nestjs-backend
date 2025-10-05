@@ -4,7 +4,7 @@ const prisma = new PrismaClient();
 
 async function main() {
     // Замените `user` на вашу модель (с маленькой буквы)
-    await prisma.transaction.deleteMany({});
+    await prisma.order.deleteMany({});
     console.log('✅ Все записи удалены, таблица осталась.');
 }
 
