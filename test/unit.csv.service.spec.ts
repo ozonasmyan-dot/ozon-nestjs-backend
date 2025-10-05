@@ -117,4 +117,50 @@ describe("UnitCsvService", () => {
     expect(header.split(",")).toContain("advertisingPerUnit");
     expect(firstDataRow.split(",").length).toBe(header.split(",").length);
   });
+
+  it("adds service columns and fills missing values with zero", async () => {
+    const csv = await csvService.aggregateCsv({});
+    const lines = csv.split("\n");
+    const headerColumns = lines[0].split(",");
+    const rows = lines.slice(1).map((line) => line.split(","));
+
+    const expectedServices = [
+      "MarketplaceServiceItemLogistics",
+      "MarketplaceServiceItemReturnFlowLogistic",
+      "SaleCommission",
+    ];
+
+    expectedServices.forEach((service) => {
+      expect(headerColumns).toContain(service);
+    });
+
+    const postingNumberIndex = headerColumns.indexOf("postingNumber");
+    const serviceIndices = Object.fromEntries(
+      expectedServices.map((service) => [service, headerColumns.indexOf(service)]),
+    );
+
+    const rowByPostingNumber = (postingNumber: string) =>
+      rows.find((columns) => columns[postingNumberIndex] === postingNumber);
+
+    const withoutServices = rowByPostingNumber("PN2");
+    expect(withoutServices).toBeDefined();
+    expectedServices.forEach((service) => {
+      expect(withoutServices?.[serviceIndices[service]]).toBe("0");
+    });
+
+    const returnLogistic = rowByPostingNumber("PN1");
+    expect(
+      returnLogistic?.[
+        serviceIndices["MarketplaceServiceItemReturnFlowLogistic"]
+      ],
+    ).toBe("-400");
+
+    const logistics = rowByPostingNumber("PN5");
+    expect(
+      logistics?.[serviceIndices["MarketplaceServiceItemLogistics"]],
+    ).toBe("-5");
+
+    const saleCommission = rowByPostingNumber("PN3");
+    expect(saleCommission?.[serviceIndices["SaleCommission"]]).toBe("-10");
+  });
 });
