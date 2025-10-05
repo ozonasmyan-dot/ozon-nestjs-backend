@@ -94,7 +94,7 @@ export class TransactionApiService {
                 );
             }
         } else {
-            if (t.operation_type !== 'ClientReturnAgentOperation') {
+            if (t.operation_type !== "ClientReturnAgentOperation") {
                 results.push(
                     new TransactionEntity({
                         operationId: String(t.operation_id ?? ""),

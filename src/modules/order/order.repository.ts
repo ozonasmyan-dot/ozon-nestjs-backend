@@ -37,7 +37,7 @@ export class OrderRepository {
     findLastNotDelivered(): Promise<Order | null> {
         return this.prisma.order.findFirst({
             where: {status: {notIn: ['delivered', 'cancelled']}},
-            orderBy: {createdAt: 'desc'},
+            orderBy: {createdAt: 'asc'},
         });
     }
 

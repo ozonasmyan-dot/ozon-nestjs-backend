@@ -3,8 +3,6 @@ import {Injectable} from "@nestjs/common";
 import axios from "axios";
 import {waitRateLimit} from "@/shared/utils/rate-limit.utils";
 
-const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
-
 @Injectable()
 export class PerformanceApiService {
     private token: string | null = null;
@@ -30,8 +28,8 @@ export class PerformanceApiService {
         const {data} = await axios.post(
             'https://api-performance.ozon.ru:443/api/client/token',
             {
-                client_id: '74593537-1751562778173@advertising.performance.ozon.ru',
-                client_secret: '67pQaCy8SW5_nbmMElgAcfeCCI5VpqgtlnvjoGXPc7sZykC5R08oSLbLcLBSVpkgAZY1UqkZio81rFjkdw',
+                client_id: '88264411-1759346888350@advertising.performance.ozon.ru',
+                client_secret: 'hgXRnjZMONXAPCvcuBdYvtgOg1tRI27rW2NLOj7KIT0vU5ZbsSxF-uSDGTrPoB3W9DqDpmZJtcRreOuvsg',
                 grant_type: "client_credentials",
             },
             {
