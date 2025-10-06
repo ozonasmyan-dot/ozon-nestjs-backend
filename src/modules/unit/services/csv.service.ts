@@ -14,7 +14,6 @@ export class CsvService {
 
     async aggregateCsv(): Promise<string> {
         const items = await this.unitService.aggregate();
-        const serviceNames = this.collectServiceNames(items);
         const header = [
             'product',
             'orderId',
@@ -29,10 +28,9 @@ export class CsvService {
             'costPrice',
             'totalServices',
             'advertisingPerUnit',
-            ...serviceNames.map((name) => OPERATION_TYPES_TRANSLATION[name] ?? name),
         ];
         const rows = items.map((item) => {
-            const services = this.collectServiceTotals(item.transactions ?? []);
+            const services = item.transactions ?? [];
             return [
                 item.product,
                 item.orderId,
@@ -47,9 +45,6 @@ export class CsvService {
                 item.costPrice,
                 item.totalServices,
                 item.advertisingPerUnit,
-                ...serviceNames.map((name) =>
-                    services.get(name)?.toDecimalPlaces(2).toNumber() ?? 0,
-                ),
             ].join(',');
         });
         return [header.join(','), ...rows].join('\n');
@@ -96,49 +91,5 @@ export class CsvService {
             );
 
         return [header.join(','), ...rows].join('\n');
-    }
-
-    private collectServiceNames(items: any[]): string[] {
-        const names = new Set<string>();
-
-        items.forEach((item) => {
-            (item.transactions ?? []).forEach((transaction: any) => {
-                const name = this.extractServiceName(transaction);
-                if (name) {
-                    names.add(name);
-                }
-            });
-        });
-
-        return Array.from(names).sort();
-    }
-
-    private collectServiceTotals(transactions: any[]): Map<string, Decimal> {
-        const totals = new Map<string, Decimal>();
-
-        transactions.forEach((transaction) => {
-            const name = this.extractServiceName(transaction);
-
-            if (!name) {
-                return;
-            }
-
-            const current = totals.get(name) ?? new Decimal(0);
-            totals.set(name, current.plus(money(transaction.price)));
-        });
-
-        return totals;
-    }
-
-    private extractServiceName(transaction: any): string | null {
-        const name = transaction?.name ?? transaction?.operationServiceName;
-
-        if (!name) {
-            return null;
-        }
-
-        const trimmed = String(name).trim();
-
-        return trimmed.length ? trimmed : null;
     }
 }
