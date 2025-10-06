@@ -3,6 +3,7 @@ import {UnitService} from '@/modules/unit/unit.service';
 import dayjs from 'dayjs';
 import Decimal from 'decimal.js';
 import {money} from '@/shared/utils/money.utils';
+import {OPERATION_TYPES_TRANSLATION} from "@/shared/constants/dicts";
 
 @Injectable()
 export class CsvService {
@@ -104,7 +105,7 @@ export class CsvService {
             (item.transactions ?? []).forEach((transaction: any) => {
                 const name = this.extractServiceName(transaction);
                 if (name) {
-                    names.add(name);
+                    names.add(OPERATION_TYPES_TRANSLATION[name]);
                 }
             });
         });
