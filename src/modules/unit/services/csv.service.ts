@@ -28,9 +28,9 @@ export class CsvService {
             'costPrice',
             'totalServices',
             'advertisingPerUnit',
+            'transactions'
         ];
         const rows = items.map((item) => {
-            const services = item.transactions ?? [];
             return [
                 item.product,
                 item.orderId,
@@ -45,6 +45,7 @@ export class CsvService {
                 item.costPrice,
                 item.totalServices,
                 item.advertisingPerUnit,
+                item.transactions
             ].join(',');
         });
         return [header.join(','), ...rows].join('\n');
