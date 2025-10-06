@@ -29,7 +29,7 @@ export class CsvService {
             'costPrice',
             'totalServices',
             'advertisingPerUnit',
-            ...serviceNames,
+            ...serviceNames.map((name) => OPERATION_TYPES_TRANSLATION[name] ?? name),
         ];
         const rows = items.map((item) => {
             const services = this.collectServiceTotals(item.transactions ?? []);
@@ -105,7 +105,7 @@ export class CsvService {
             (item.transactions ?? []).forEach((transaction: any) => {
                 const name = this.extractServiceName(transaction);
                 if (name) {
-                    names.add(OPERATION_TYPES_TRANSLATION[name]);
+                    names.add(name);
                 }
             });
         });
